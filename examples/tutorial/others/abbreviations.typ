@@ -1,6 +1,6 @@
 #let abbreviations = (
-  //(abbr: $A$, description: "符号描述"),
-  //(abbr: $A$, description: [符号描述]),
+  /* (abbr: $A$, description: "符号描述"), */
+  /* (abbr: $A$, description: [符号描述]), */
   (abbr: $frac(partial, partial x, style: "horizontal")$, description: "偏导数"),
   (abbr: $P (A|B)$, description: "在事件 B 发生的条件下事件 A 发生的概率"),
   (abbr: $theta$, description: "模型参数（如权重、偏置）"),

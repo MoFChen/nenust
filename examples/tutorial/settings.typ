@@ -3,11 +3,11 @@
 
 #let config = (
   anonymous: false,
-  double_sided: true,
+  double_sided: false,
 
-  degree_level: "doctoral", // "master"
-  degree_type: "academic",  // "professional"
-  discipline_group: "science",  // "social"
+  degree_level: "doctoral", /* "master" */
+  degree_type: "academic",  /* "professional" */
+  discipline_group: "science",  /* "social" */
 
   include_outer_cover: true,
   include_list_of_figures: true,
@@ -27,8 +27,8 @@
   title: (
     zh: "东北师范大学研究生学位论文 Typst 模板使用教程",
     en: "A Practical Guide to the NENU Graduate Thesis Typst Template",
-    //display_zh: [],
-    //display_en: []
+    /* display_zh 内容块暂不兼容博士 A3 书脊。 */
+    /* display_en: [], */
   ),
   abstract: (
     zh: include "abstract/abstract-zh.typ",
@@ -73,14 +73,14 @@
       title: "学位论文 Typst 模板的设计与实践",
       type: "学术论文",
       journal: "示例期刊",
-      date: [2025年#parbreak()第12卷],   // 可用内容块控制单元格内换行
+      date: [2025年#parbreak()第12卷],   /* 可用内容块控制单元格内换行 */
       author: "1",
     ),
     (
       title: "学位论文 Typst 模板的设计与实践",
       type: "学术论文",
       journal: "示例期刊",
-      date: "2025年07月",   // 也支持纯文本格式
+      date: "2025年07月",   /* 也支持纯文本格式 */
       author: "1",
     ),
   ),

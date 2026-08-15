@@ -2,12 +2,11 @@
 
 == 三线表与表注
 
-模板会把表题放在表格上方。三线表先用 `stroke: none` 关闭默认网格，再添加顶线、表头分隔线和底线：
+模板会把表题放在表格上方，并已全局设置 `stroke: none` 关闭默认网格。三线表只需添加顶线、表头分隔线和底线；若脱离本模板单独使用示例，再显式补上 `stroke: none`：
 
 #figure(
   table(
     columns: 3,
-    stroke: none,
     table.hline(stroke: 1.2pt),
     table.header([方法], [样本数], [准确率]),
     table.hline(stroke: 0.5pt),
@@ -36,16 +35,15 @@ Typst 尚未支持表注。表下注释可增加一个跨全部列的单元格�
 #figure(
   table(
     columns: 3,
-    stroke: none,
     table.hline(stroke: 1.2pt),
-    table.cell(colspan: 2)[Ads空间],
-    table.hline(stroke: 0.5pt, start: 0, end: 2),
-    table.cell(colspan: 1)[边界CFT],
-    table.hline(stroke: 0.5pt, start: 2),
-    [几何属性], [场论元素], [CFT算子],
+    table.header(
+      table.cell(colspan: 2)[AdS 空间],
+      [边界 CFT],
+      [几何属性], [场论元素], [CFT 算子],
+    ),
     table.hline(stroke: 1.2pt),
     [黑洞温度], [$T_h=kappa/(2pi)$], [热场双态],
-    [曲率半径], [$R^4/alpha'=g^2_(Y M) N$], ['t Hooft 耦合 λ],
+    [曲率半径], [$R^4/alpha'=g^2_(Y M) N$], [#text(font: "Times New Roman")[’t Hooft] 耦合 λ],
     [额外维度紧致化], [Kaluza-Klein 模], [R 对称性荷],
     [时空测地线], [$e^(-m L)$], [两点函数 $⟨O(x)O(y)⟩$],
     table.hline(stroke: 1.2pt),

@@ -134,77 +134,42 @@
 
 从模板开源地址 #link("https://github.com/MoFChen/nenust")[github.com/MoFChen/nenust] 下载模板，下载完成后解压到合适的位置。熟悉 Git 的用户也可运行 `git clone https://github.com/MoFChen/nenust`。与 Git 结合使用能更方便地管理论文版本，具体使用方法这里不再展开。
 
-使用 VSCode 打开模板文件夹，如@fig-open-project 所示。
+使用 VSCode 打开模板文件夹。
 
-#figure(
-  image("imgs/17-open-project.png", width: 50%),
-  caption: [使用 VS Code 打开模板项目],
-) <fig-open-project>
-
-`examples/empty` 是空白起点。复制 `empty` 文件夹并将文件夹改成合适的名字（这里演示改为 `my-thesis`），并把入口文件从 `empty.typ` 改名为 `main.typ`，如@fig-open-project 所示。
-
-#figure(
-  image("imgs/18-new-terminal.png", width: 70%),
-  caption: [VSCode 新建终端],
-)
+`examples/empty` 是空白起点。复制 `empty` 文件夹并将副本改成合适的名字（这里演示改为 `my-thesis`）。副本中的 `main.typ`、`settings.typ` 和 `references.bib` 分别负责装配论文、保存配置与论文信息、保存参考文献，不需要重命名入口文件。
 
 点击菜单栏的 Terminal 并再次点击 New Terminal 新建终端，或按下 #raw("Ctrl+Shift+`") 快捷键。
-
-#figure(
-  image("imgs/19-compile-template.png", width: 100%),
-  caption: [在终端编译项目],
-)
 
 在终端页面输入 `typst --version` 检查环境变量是否设置正确以及 Typst 版本，若不能正常输出版本号请回到#ref(<sec-typst-cli-path>)检查步骤是否出错。
 
 随后从仓库根目录运行完整编译命令。`--root .` 负责解析模板中的根路径，不能省略：
 
 ```powershell
-typst compile --root . examples/my-thesis/main.typ
+typst compile --root . --font-path template/assets/fonts examples/my-thesis/main.typ
 ```
 
 首次冷缓存编译需要联网下载模板使用的 `@preview/cuti:0.4.0` 包；文献模块是仓库内的纯 Typst 实现，不需要下载社区文献包。
 
-使用 SumatraPDF 查看编译完成的 main.pdf 文件。看到生成的空白信息页代表编译成功。
-
-#figure(
-  image("imgs/20-check-pdf.png", width: 100%),
-  caption: [使用 SumatraPDF 查看 main.pdf 文件],
-)
+使用 SumatraPDF 查看编译完成的 main.pdf 文件。空白项目仍会生成外封面、中英文信息页、委员会页、声明页、摘要、目录、正文标题和博士评语页；能够看到这些页面且终端没有编译错误，说明基础环境可用。
 
 == 修改并再次编译
 
-#figure(
-  image("imgs/21-edit-project.png", width: 70%),
-  caption: [使用 VSCode 修改 main.typ 文件内容并再次编译],
-)
+打开 `settings.typ`，尝试做以下修改：
 
-打开 `main.typ`，尝试做以下修改：
+· 将 `include_outer_cover` 的值修改为 `false`，关闭 A3 外封面输出；
 
-· 将 `showCover` 的值修改为 `false` 使之关闭A3封面输出；
+· 修改 `information.title` 中的论文中英文标题。
 
-· 修改论文中英文标题。
-
-再次运行上述 `typst compile` 命令编译 PDF，确认 PDF 变化如@fig-check-pdf-again 所示。这就是后续写作的基本循环。
-
-#figure(
-  image("imgs/22-check-pdf-again.png", width: 60%),
-  caption: [使用 SumatraPDF 再次查看 main.pdf 文件],
-) <fig-check-pdf-again>
+再次运行上述 `typst compile` 命令编译 PDF，确认外封面和标题随配置变化。这就是后续写作的基本循环。
 
 == 自动编译与预览
 
 === 自动编译
 
-#figure(
-  image("imgs/23-typst-watch.png", width: 100%),
-  caption: [使用 typst watch 命令监控文件变化并自动进行增量编译],
-)
-
 每次修改都要伴随执行编译命令实在是繁琐，Typst 提供了 watch 命令实时监控文件变化并自动进行增量编译，增量编译速度极快几乎等同于实时预览。
 
 ```powershell
-typst watch --root . examples/my-thesis/main.typ
+typst watch --root . --font-path template/assets/fonts examples/my-thesis/main.typ
 ```
 
 === 预览

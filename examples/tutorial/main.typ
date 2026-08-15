@@ -45,7 +45,7 @@
 = 模板自定义
 #include "appendix/appendix-03.typ"
 
-= 目前尚未解决的问题
+= Typst 排版边界与已有支持
 #include "appendix/appendix-04.typ"
 
 #end-appendices()

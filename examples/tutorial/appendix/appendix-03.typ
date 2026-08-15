@@ -1,17 +1,17 @@
-本附录区分两类修改：`info`、`config` 和正文中的局部规则属于论文入口可控制的公开层；`template/` 下的常量与规则属于模板内部实现。下列标为“内部片段”的代码只用于展示应修改的源文件位置，不应粘贴到论文正文或 `info` 中执行。修改公开数据后至少运行完整检查；修改模板内部实现后同时运行最小与完整检查：
+本附录区分两类修改：`information`、`config` 和正文中的局部规则属于论文入口可控制的公开层；`template/` 下的常量与规则属于模板内部实现。下列标为“内部片段”的代码只用于展示应修改的源文件位置，不应粘贴到论文正文或 `information` 中执行。修改公开数据后至少运行完整检查；修改模板内部实现后同时运行最小与完整检查：
 
 #figure(
   caption: [Typst 编译命令],
   kind: image,
   ```powershell
-  typst compile --root . examples/empty/empty.typ
-  typst compile --root . examples/tutorial/main.typ
+  typst compile --root . --font-path template/assets/fonts examples/empty/main.typ
+  typst compile --root . --font-path template/assets/fonts examples/tutorial/main.typ
   ```
 )
 
 == 论文标题
 
-模板将“纯文本标题”和“排版标题”分开。`template/nenu-template.typ:46-52` 使用 `info.title.zh` 设置 PDF metadata；`template/nenu-template.typ:99-103` 将可选的 `display_zh`、`display_en` 用于排版，未提供时分别回退到 `zh`、`en`。因此，`zh` 和 `en` 必须保留为纯字符串；标题含复杂数学内容时，只在可选显示字段中使用内容块：
+`template/nenu-template.typ` 使用 `information.title.zh` 设置 PDF metadata；`template/modules/utils.typ` 的 `format_info` 将可选的 `display_zh`、`display_en` 用于封面排版，未提供时分别回退到 `zh`、`en`。因此，`zh` 和 `en` 必须保留为纯字符串。当前博士 A3 书脊仍会读取排版后的中文标题并交给字符串函数，所以启用博士外封面时不要把 `display_zh` 设置为内容块；`display_en` 不经过书脊，可用于英文复杂公式：
 
 #figure(
   caption: [模板 Title 参数填写示例],
@@ -20,13 +20,12 @@
   title: (
     zh: "含参数 alpha 的论文标题",
     en: "A Thesis Title with Parameter Alpha",
-    display_zh: [含参数 $alpha$ 的论文标题],
     display_en: [A Thesis Title with Parameter $alpha$],
   ),
   ```
 )
 
-上述四个字段是标题内容的公开入口，但字号和位置不是配置项。A4 标题最终由 `template/modules/template-cover.typ:14-30` 的通用封面函数排版，其中标题位置与字体固定在 `template/modules/template-cover.typ:21-22`。若学校要求改变这些参数，只能编辑该内部规则；它同时服务 A3 正面和两个 A4 信息页，改动会影响所有调用方。
+标题内容是公开入口，但字号和位置不是配置项。A4 标题最终由 `template/pages/cover.typ` 的 `page-cover-template` 排版，其中标题位置与字体固定在同一函数内。若学校要求改变这些参数，只能编辑该内部规则；它同时服务 A3 正面和两个 A4 信息页，改动会影响所有调用方。
 
 #figure(
   caption: [模板内部渲染标题的代码片段],
@@ -40,18 +39,18 @@
 
 === A3封面书脊标题
 
-A3 外封面只在 `config.showCover: true` 时生成，调用位置为 `template/nenu-template.typ:160-165`。`template/modules/template-cover.typ:109-125` 又只在 `config.isThesis: false` 的博士分支生成书脊文字；`isAcademic` 只选择书脊上的“学”或“专”标记。书脊没有独立的公开标题字段，它始终读取 `template.title.plain_zh`，即纯字符串 `info.title.zh`。要看到博士书脊，现有 `config` 中应使用：
+A3 外封面只在 `config.include_outer_cover` 为 `true` 时生成。`template/pages/cover.typ` 的 `page-cover-a3` 又只在 `degree_level: "doctoral"` 的分支生成书脊文字；`degree_type` 选择书脊上的“学”或“专”标记。书脊没有独立的公开标题字段，当前读取 `format_info` 处理后的中文显示标题。要看到博士书脊，现有 `config` 中应使用：
 
 #figure(
   caption: [博士论文模板配置示例],
   kind: image,
   ```typst
-  isThesis: false,
-  showCover: true,
+  degree_level: "doctoral",
+  include_outer_cover: true,
   ```
 )
 
-书脊从 `template/modules/template-cover.typ:119-123` 的固定 `dy`、字号、行距开始纵向排版。`template/modules/utils.typ:12-24` 的 `v_cjk_latin` 会逐字符处理纯文本：空白变成竖向间距，拉丁字母转为大写并旋转。数学内容不能通过 `display_zh` 进入书脊。若需要缩小字号、移动起点或改变字符处理，只能修改这些内部位置；例如当前书脊规则如下图所示。
+书脊由 `template/pages/cover.typ` 中的固定 `dy`、字号、行距定位。`template/modules/utils.typ` 的 `v_cjk_latin` 会逐字符处理纯文本：空白变成竖向间距，拉丁字母转为大写并旋转。若需要缩小字号、移动起点或改变字符处理，只能修改这些内部位置；例如当前书脊规则如下图所示。
 
 #figure(
   caption: [模板A3封面书脊标题规则],
@@ -60,65 +59,70 @@ A3 外封面只在 `config.showCover: true` 时生成，调用位置为 `templat
   #place(top + center, dy: 158pt,
     text(size: 16pt, fill: black, [
       #set par(leading: 0pt, spacing: 1pt)
-      #v_cjk_latin(template.title.plain_zh)
+      #v_cjk_latin(e.title.zh)
     ])
   )
   ```
 )
 
-此外，`template/modules/template-cover.typ:90-106` 用硕士 `5pt`、博士 `20pt` 的内部 `offset` 移动 A3 左右半页。修改它会改变折线两侧的整体位置，并非只移动书脊。检查时应以 `showCover: true`、`isThesis: false` 编译，分别核对中英文混排、空格、长标题以及学术型和专业型标记；内部改动需运行本附录开头的两项编译检查。
+此外，`template/config/styles.typ` 的 `a3_book_spine_width` 使用硕士 `5pt`、博士 `20pt` 的内部偏移移动 A3 左右半页。修改它会改变折线两侧的整体位置，并非只移动书脊。检查时应以 `include_outer_cover: true`、`degree_level: "doctoral"` 编译，分别核对中英文混排、空格、长标题以及学术型和专业型标记；内部改动需运行本附录开头的两项编译检查。
 
 == A4封面信息栏
 
-`showCover` 只控制 A3 外封面。`template/nenu-template.typ:167-179` 在所有模式下都会生成 A4 中文和英文信息页，当前没有隐藏任一 A4 页的公开开关。公开层可通过 `info.cover`、`info.title`、`info.author`、`info.supervisors`、`info.subjects` 和 `info.date` 改变内容，并通过 `config.anonymous`、`config.isThesis`、`config.isAcademic` 选择模板已经实现的匿名、学位层次和学位类型分支；这些开关不能用来微调位置。
+`include_outer_cover` 只控制 A3 外封面。`template/nenu-template.typ` 在所有模式下都会生成 A4 中文和英文信息页，当前没有隐藏任一 A4 页的公开开关。公开层可通过 `information.institution`、`security`、`title`、`author`、`supervisors`、`program` 和 `submission_date` 改变内容，并通过 `config.anonymous`、`degree_level`、`degree_type` 选择模板已经实现的匿名、学位层次和学位类型分支；这些开关不能用来微调位置。
 
-信息栏的通用几何布局位于 `template/modules/template-cover.typ:14-30`。其中底部位置 `dy: -158pt`、行高 `19pt`、单元格内边距 `2pt` 和列结构都是内部常量：
+信息栏的通用几何布局位于 `template/pages/cover.typ` 的 `page-cover-template`。其中底部位置 `dy: -158pt`、行高 `19pt`、单元格内边距 `2pt` 和列结构都是内部常量：
 
 #figure(
   caption: [模板中文信息栏显示代码],
   kind: image,
   ```typst
-  place(center + bottom, dy: -158pt, dx: offset,
-    text(size: 12pt)[
-      #grid(columns: (auto, length), rows: 19pt, inset: 2pt,
-        align: (right + bottom, center + bottom), ..infos)
-    ]
-  )
+  place(center + bottom, dy: -158pt, dx: -offset)[
+    #set text(size: 12pt)
+    #grid(
+      columns: (auto, width),
+      rows: 19pt,
+      inset: 2pt,
+      align: (right + bottom, center + bottom),
+      ..information,
+    )
+  ]
   ```
 )
 
-增加导师会增加信息栏行数，过长字段也可能换行或越界；固定位置因而可能与标题相碰。不要删除公开契约中的成对中英文字段来“腾出空间”，应先缩短为学院认可的正式表述，确有版式要求时再改内部常量。检查时除默认配置外，还应以 `showCover: false` 确认两个 A4 页面仍存在，并分别编译匿名与非匿名、硕士与博士、学术型与专业型分支。
+增加导师会增加信息栏行数，过长字段也可能换行或越界；固定位置因而可能与标题相碰。不要删除公开契约中的成对中英文字段来“腾出空间”，应先缩短为学院认可的正式表述，确有版式要求时再改内部常量。检查时除默认配置外，还应以 `include_outer_cover: false` 确认两个 A4 页面仍存在，并分别编译匿名与非匿名、硕士与博士、学术型与专业型分支。
 
 === 中文信息栏
 
-中文页的数据装配位置是 `template/nenu-template.typ:85-119`：页首使用 `cover.school_code`、`author.id` 和 `cover.security_zh`，信息栏使用 `author.zh`、各导师的 `name_zh` 与 `title_zh`，以及 `subjects.category.zh`、`subjects.field.zh`、`subjects.research.zh`。`template/modules/template-cover.typ:60-87` 将这些值放入中文网格，并以 `date.display("[year]年[month]月")` 输出日期。应在现有 `info` 中直接填写完整记录，例如：
+中文页的数据由 `template/modules/utils.typ` 的 `format_info` 装配：页首使用 `institution.school_code`、`author.student_id` 和 `security.zh`，信息栏使用 `author.name.zh`、各导师的 `name.zh` 与 `academic_title.zh`，以及 `program` 的三个中英文字段。`template/pages/cover.typ` 的 `page-cover-a4-zh` 将这些值放入中文网格，并以 `submission_date.display("[year]年[month]月")` 输出日期。应在现有 `information` 中直接填写完整记录，例如：
 
 #figure(
   caption: [模板配置填写示例],
   kind: image,
   ```typst
-  cover: (
+  institution: (
+    name_zh: "东北师范大学",
+    name_en: "Northeast Normal University",
     school_code: "10200",
-    security_zh: "无",
-    security_en: "None",
   ),
-  author: (zh: "张三", en: "Zhang San", id: "学号"),
+  security: (zh: "无", en: "None"),
+  author: (name: (zh: "张三", en: "Zhang San"), student_id: "学号"),
   supervisors: (
-    (name_zh: "李四", name_en: "Li Si",
-    title_zh: "教授", title_en: "Professor"),
+    (name: (zh: "李四", en: "Li Si"),
+     academic_title: (zh: "教授", en: "Professor")),
   ),
-  subjects: (
-    category: (zh: "一级学科或学位类别", en: "Approved English name"),
-    field: (zh: "二级学科或学位领域", en: "Approved English name"),
-    research: (zh: "研究方向", en: "Research Area"),
+  program: (
+    primary_discipline: (zh: "一级学科或学位类别", en: "Approved English name"),
+    secondary_discipline: (zh: "二级学科或学位领域", en: "Approved English name"),
+    research_area: (zh: "研究方向", en: "Research Area"),
   ),
-  date: datetime(year: 2025, month: 9, day: 25),
+  submission_date: datetime(year: 2025, month: 9, day: 25),
   ```
 )
 
-`config.isAcademic` 在 `template/nenu-template.typ:134-142` 决定中文标签是“一级学科/二级学科”还是“学位类别/学位领域”，不要为了视觉对齐选择错误的论文类型。`config.anonymous` 会在 `template/nenu-template.typ:54-74` 清空作者、导师和学科等值，因此匿名模式下修改这些公开字段不会显示。
+`config.degree_type` 在 `format_info` 中决定中文标签是“一级学科/二级学科”还是“学位类别/学位领域”，不要为了视觉对齐选择错误的论文类型。`config.anonymous` 会清空作者、导师和学科等值，因此匿名模式下修改这些公开字段不会显示。
 
-非匿名模式会在 `template/nenu-template.typ:76-81` 格式化作者和委员会姓名，中文封面还会在 `template/modules/template-cover.typ:70-74` 格式化导师姓名。两字姓名插入 `1em` 间距的内部规则位于 `template/modules/utils.typ:1-9`：
+非匿名模式会通过 `template/modules/utils.typ` 的 `format_cjk_name` 格式化作者和导师姓名；当前委员会页仍使用原始记录。两字姓名插入 `1em` 间距的内部规则位于同一文件：
 
 #figure(
   caption: [模板自动处理姓名间距],
@@ -128,13 +132,13 @@ A3 外封面只在 `config.showCover: true` 时生成，调用位置为 `templat
   ```
 )
 
-修改该值会影响所有调用 `format_cjk_name` 的两字姓名，而非只影响封面。中文网格右侧的下划线是值单元格的底边，因此它与右侧值列共用一个宽度；可在 `template/modules/template-cover.typ:7-10` 的内部 `style.underline_zh_length` 中调整，当前为 `140pt`：
+修改该值会影响所有调用 `format_cjk_name` 的两字姓名，而非只影响封面。中文网格右侧的下划线是值单元格的底边，因此它与右侧值列共用一个宽度；可在 `template/config/styles.typ` 的 `nenu-style.cover.underline_length_zh` 中调整，当前为 `140pt`：
 
 #figure(
   caption: [中文信息栏值列宽度常量],
   kind: image,
   ```typst
-  underline_zh_length: 140pt,
+  underline_length_zh: 140pt,
   ```
 )
 
@@ -142,41 +146,41 @@ A3 外封面只在 `config.showCover: true` 时生成，调用位置为 `templat
 
 === 英文信息栏
 
-英文页从同一组公开数据读取 `cover.security_en`、`author.en`、导师的 `name_en` 与 `title_en`，以及三个 `subjects` 记录的 `en` 值。数据到页面的准确映射位于 `template/modules/template-cover.typ:32-57`；日期固定显示为 `"[year], [month]"`。导师当前按“职称 + 空格 + 姓名”拼接，相关字段必须是字符串：
+英文页从同一组公开数据读取 `security.en`、`author.name.en`、导师的 `name.en` 与 `academic_title.en`，以及三个 `program` 记录的 `en` 值。数据到页面的映射位于 `template/pages/cover.typ` 的 `page-cover-a4-en`；日期固定显示为 `"[year], [month]"`。导师当前按“职称 + 空格 + 姓名”拼接，相关字段必须是字符串：
 
 #figure(
   caption: [英文导师字段填写示例],
   kind: image,
   ```typst
   supervisors: (
-    (name_zh: "李四", name_en: "Li Si",
-     title_zh: "教授", title_en: "Professor"),
+    (name: (zh: "李四", en: "Li Si"),
+     academic_title: (zh: "教授", en: "Professor")),
   ),
   ```
 )
 
-学位层次标题 `A Thesis`/`A Dissertation` 在 `template/nenu-template.typ:122-131` 内部确定，作者、导师和研究方向等英文标签在 `template/nenu-template.typ:93-117` 内部确定，页脚文字则固定在 `template/modules/template-cover.typ:55`。这些文字没有对应的 `info` 或 `config` 字段。只有在学校认可的英文格式要求不同且确认要影响所有论文时，才应修改相应内部字符串。
+学位层次标题 `A Thesis`/`A Dissertation` 和作者、导师、研究方向等英文标签在 `format_info` 内部确定，页脚文字固定在 `page-cover-a4-en`。这些文字没有对应的 `information` 或 `config` 字段。只有在学校认可的英文格式要求不同且确认要影响所有论文时，才应修改相应内部字符串。
 
-例如，改变导师姓名与职称的顺序需要编辑 `template/modules/template-cover.typ:42-45`，而不是把标点塞进姓名字段。内部片段（仅用于定位）可由当前规则改为学院要求的顺序：
+例如，改变导师姓名与职称的顺序需要编辑 `template/pages/cover.typ` 的 `page-cover-a4-en`，而不是把标点塞进姓名字段。内部片段（仅用于定位）可由当前规则改为学院要求的顺序：
 
 #figure(
   caption: [英文导师姓名与职称顺序],
   kind: image,
   ```typst
-  // 当前实现
-  infoline(su.title_en + " " + su.name_en)
-  // 仅在规范要求如此时改为
-  infoline(su.name_en + ", " + su.title_en)
+  /* 当前实现 */
+  sv.academic_title.en + " " + sv.name.en
+  /* 仅在规范要求如此时改为 */
+  sv.name.en + ", " + sv.academic_title.en
   ```
 )
 
-英文网格右侧的下划线同样是值单元格的底边，右侧值列宽度可通过 `template/modules/template-cover.typ:7-10` 的内部 `style.underline_en_length` 调整，当前为 `210pt`：
+英文网格右侧的下划线同样是值单元格的底边，右侧值列宽度可通过 `template/config/styles.typ` 的 `nenu-style.cover.underline_length_en` 调整，当前为 `210pt`：
 
 #figure(
   caption: [英文信息栏值列宽度常量],
   kind: image,
   ```typst
-  underline_en_length: 210pt,
+  underline_length_en: 210pt,
   ```
 )
 
@@ -186,7 +190,7 @@ A3 外封面只在 `config.showCover: true` 时生成，调用位置为 `templat
 
 中文标签主要由方正、等宽的汉字组成，各标签宽度也较接近，因此两列网格直接居中时通常容易获得明确的视觉中心。英文提示词的长度却相差很大，例如短的 `Author` 与较长的学科提示词会共同决定自动标签列宽；即使整个两列网格在几何上居中，标签和值线的视觉重心仍可能显得偏离页面中心。
 
-学术型与专业型模板使用的英文提示词不同，所以 `template/nenu-template.typ:134-142` 为 `template.offset_en` 分别设置视觉补偿：学术型为 `-45pt`，专业型为 `-5pt`。这不是公开配置项。该值经 `template/modules/template-cover.typ:53-54` 传入通用函数，并在 `template/modules/template-cover.typ:23` 作为 `dx: offset` 只移动信息网格；标题、页首、页脚和日期不会随之移动。
+学术型与专业型模板使用的英文提示词不同，所以 `template/config/styles.typ` 的 `nenu-style.cover.horizon_offset_en` 分别设置视觉补偿：学术型为 `45pt`，专业型为 `5pt`。`page-cover-template` 以 `dx: -offset` 应用该值，只向左移动信息网格；标题、页首、页脚和日期不会随之移动。
 
 内部片段（仅用于定位）：
 
@@ -194,22 +198,21 @@ A3 外封面只在 `config.showCover: true` 时生成，调用位置为 `templat
   caption: [英文信息栏视觉偏移常量],
   kind: image,
   ```typst
-  template.offset_en = -45pt // 学术型
-  template.offset_en = -5pt  // 专业型
+  horizon_offset_en: (academic: 45pt, professional: 5pt),
   ```
 )
 
-应先按真实学位类型设置 `config.isAcademic`，不要为修正对齐而误用它。用户可根据论文实际填写的英文姓名、导师和学科信息，分别小幅调整对应分支的 `template.offset_en`；两套提示词和元数据长度不同，两个值应独立校准。负值的绝对值增大时网格继续左移，可能接近页边界。修改后必须分别以 `isAcademic: true` 和 `isAcademic: false` 编译，使用各自真实且最长的英文信息检查网格与页面中心、下划线和页边距，再运行最小与完整检查。
+应先按真实学位类型设置 `config.degree_type`，不要为修正对齐而误用它。用户可根据论文实际填写的英文姓名、导师和学科信息，分别小幅调整 `academic`、`professional` 对应值；两套提示词和元数据长度不同，两个值应独立校准。正值增大时网格继续左移，可能接近页边界。修改后必须分别以 `degree_type: "academic"` 和 `degree_type: "professional"` 编译，使用各自真实且最长的英文信息检查网格与页面中心、下划线和页边距，再运行最小与完整检查。
 
 == 符号和缩略语说明
 
-公开层由 `config.showAbbreviationsList` 控制是否显示页面，由 `info.abbreviations` 提供按顺序排版的记录。调用位置为 `template/nenu-template.typ:283-285`。`abbr` 和 `description` 可使用字符串或数学等可排版内容，最小配置片段如下：
+公开层由 `config.include_abbreviations` 控制是否显示页面，由 `information.abbreviations` 提供按顺序排版的记录。`template/nenu-template.typ` 调用 `template/pages/abbreviations.typ` 的 `page-abbreviations` 完成排版。`abbr` 和 `description` 可使用字符串或数学等可排版内容，最小配置片段如下：
 
 #figure(
   caption: [符号和缩略语配置示例],
   kind: image,
   ```typst
-  showAbbreviationsList: true,
+  include_abbreviations: true,
 
   abbreviations: (
     (abbr: "LLM", description: "大语言模型（Large Language Model）"),
@@ -218,13 +221,13 @@ A3 外封面只在 `config.showCover: true` 时生成，调用位置为 `templat
   ```
 )
 
-开关为 `false` 只是不生成该列表，不会把 `info` 的其他字段变成可选项；仍应保留完整契约。`template/modules/template-abbr.typ:4-11` 按元组原顺序遍历，不会自动排序、去重或统一术语。段落行距 `0.5em`、非两端对齐、单元格内边距 `0.489em` 和网格列宽均为内部规则，改变这些样式需要编辑该模块。
+开关为 `false` 只是不生成该列表，不会把 `information` 的其他字段变成可选项；仍应保留完整契约。`page-abbreviations` 按元组原顺序遍历，不会自动排序、去重或统一术语。段落行距 `0.5em`、非两端对齐、单元格内边距 `0.489em` 和网格列宽均为内部规则，改变这些样式需要编辑 `template/pages/abbreviations.typ`。
 
-较长公式可能挤压说明列，较长说明可能增加行高；调整顺序或措辞应在 `info.abbreviations` 完成，不要为单个条目修改模板。检查时分别使用 `showAbbreviationsList: true` 和 `false` 编译，并在开启状态下保留文本、数学符号和长说明三类条目；内部样式改动需运行最小与完整检查。
+较长公式可能挤压说明列，较长说明可能增加行高；调整顺序或措辞应在 `information.abbreviations` 完成，不要为单个条目修改模板。检查时分别使用 `include_abbreviations: true` 和 `false` 编译，并在开启状态下保留文本、数学符号和长说明三类条目；内部样式改动需运行最小与完整检查。
 
 === 列表左右单元格比例
 
-列表比例没有公开 `info` 或 `config` 字段。`template/modules/template-abbr.typ:7-10` 将网格固定为 `columns: (1fr, 4fr)`，即扣除单元格内边距后的可分配宽度名义上按 1:4 分给缩略语和说明。若左列经常包含较宽公式，可直接在该内部位置调整，例如：
+列表比例没有公开 `information` 或 `config` 字段。`template/pages/abbreviations.typ` 将网格固定为 `columns: (1fr, 4fr)`，即扣除单元格内边距后的可分配宽度名义上按 1:4 分给缩略语和说明。若左列经常包含较宽公式，可直接在该内部位置调整，例如：
 
 #figure(
   caption: [缩略语列表列宽比例],
@@ -238,7 +241,7 @@ A3 外封面只在 `config.showCover: true` 时生成，调用位置为 `templat
 
 == 下划线
 
-正文下划线的模板默认偏移位于 `template/nenu-template.typ:259-260`，当前为 `3pt`，没有对应的 `info` 或 `config` 字段。只需改变论文某一局部时，不必修改模板，可在正文内容块中使用更靠后的局部规则：
+正文下划线的模板默认偏移位于 `template/nenu-template.typ` 的正文样式规则中，当前为 `3pt`，没有对应的 `information` 或 `config` 字段。只需改变论文某一局部时，不必修改模板，可在正文内容块中使用更靠后的局部规则：
 
 #figure(
   caption: [正文局部下划线设置],
@@ -261,11 +264,11 @@ A3 外封面只在 `config.showCover: true` 时生成，调用位置为 `templat
   ```
 )
 
-该规则作用于其后的摘要、目录和正文等内容中的 Typst `underline`，并不控制 A4 信息栏的横线。封面横线由 `template/modules/template-cover.typ:12` 的单元格底边 `0.5pt` 绘制，长度由同文件 `7-10` 的 `underline_zh_length`、`underline_en_length` 控制。偏移过小会压住字形，过大则可能碰到下一行；检查时应同时观察中文、拉丁字母、上下标附近和连续多行的下划线。内部默认值改动后运行两项编译检查，局部规则只需运行完整检查。
+该规则作用于其后的摘要、目录和正文等内容中的 Typst `underline`，并不控制 A4 信息栏的横线。封面横线由 `template/pages/cover.typ` 中值单元格的 `0.5pt` 底边绘制，长度由 `template/config/styles.typ` 的 `underline_length_zh`、`underline_length_en` 控制。偏移过小会压住字形，过大则可能碰到下一行；检查时应同时观察中文、拉丁字母、上下标附近和连续多行的下划线。内部默认值改动后运行两项编译检查，局部规则只需运行完整检查。
 
 == 数学公式字体
 
-数学字体没有公开配置项。基础字体名定义在 `template/modules/fonts.typ:2-18`，当前 `FONT_MATH` 为 `New Computer Modern Math`；`template/modules/fonts.typ:20-25` 再组成 `(FONT_MATH, FONT_SONGTI)` 回退序列。`template/nenu-template.typ:147-151` 将该序列应用于数学公式。要全局更换数学字体，应修改内部常量，而不是逐个公式设置字体：
+数学字体没有公开配置项。基础字体名定义在 `template/config/fonts.typ`，当前 `FONT_MATH` 为 `New Computer Modern Math`，并组成 `(FONT_MATH, FONT_SONGTI)` 回退序列；`template/nenu-template.typ` 将该序列应用于数学公式。要全局更换数学字体，应修改内部常量，而不是逐个公式设置字体：
 
 #figure(
   caption: [数学字体内部常量],
@@ -275,17 +278,17 @@ A3 外封面只在 `config.showCover: true` 时生成，调用位置为 `templat
   ```
 )
 
-上例来自 `template/modules/fonts.typ:13` 已列出的候选字体名，但使用前仍须确认本机或 `assets/fonts` 中确实存在该字体。可先检查 Typst 能识别的字体族：
+上例来自 `template/config/fonts.typ` 已列出的候选字体名，但使用前仍须确认本机或 `template/assets/fonts` 中确实存在该字体。可先检查 Typst 能识别的字体族：
 
 #figure(
   caption: [Typst 可用字体检查命令],
   kind: image,
   ```powershell
-  typst fonts --font-path assets/fonts
+  typst fonts --font-path template/assets/fonts
   ```
 )
 
-数学字体会影响行内与独立公式的字形、符号覆盖、基线和公式宽度，但不会改变 `info` 内容。名称错误可能导致字体警告或回退，不同数学字体的度量也可能改变换行。修改后运行最小与完整检查，并重点查看教程数学章节中的希腊字母、算子、分式、矩阵、定界符、上下标以及中西文相邻处。
+数学字体会影响行内与独立公式的字形、符号覆盖、基线和公式宽度，但不会改变 `information` 内容。名称错误可能导致字体警告或回退，不同数学字体的度量也可能改变换行。修改后运行最小与完整检查，并重点查看教程数学章节中的希腊字母、算子、分式、矩阵、定界符、上下标以及中西文相邻处。
 
 == 数学公式编号
 
@@ -300,55 +303,58 @@ A3 外封面只在 `config.showCover: true` 时生成，调用位置为 `templat
   ```
 )
 
-公式编号没有公开配置项。`template/nenu-template.typ:198-207` 在每个一级标题开始时把公式计数器清零；`template/nenu-template.typ:230-234` 使用当前一级标题计数和公式计数生成 `(章号.公式号)`，并将引用补充文字设为“公式”。若规范要求连字符，只修改这条内部编号规则：
+公式编号没有公开配置项。`template/nenu-template.typ` 在每个一级标题开始时把公式计数器清零；`template/config/rules.typ` 的 `equation-numbering` 使用当前一级标题计数和公式计数，在正文生成 `(1.1)`，在附录生成 `(A.1)`，`template/nenu-template.typ` 再将引用补充文字设为“公式”。若规范要求连字符，应同时保留正文和附录分支：
 
 #figure(
   caption: [公式连字符编号规则],
   kind: image,
   ```typst
-  set math.equation(numbering: (n) => {
-    numbering("(1-1)", counter(heading).get().first(), n)
-  }, supplement: [公式])
+  #let equation-numbering(n) = chapter-numbering(n, "(1-1)", "(A-1)")
   ```
 )
 
-改变格式会同步影响自动引用的显示，但不会修复正文中手写的旧编号；这正是应始终使用标签的原因。移除一级标题处的重置还会改变全篇计数语义，不应作为仅更换分隔符的手段。修改后运行两项编译检查，并至少核对两个连续章节的首个和末个公式、章内递增、跨章重置及 `@eq-...` 引用。
+在 `template/config/rules.typ` 中改变该函数会同步影响公式及自动引用，但不会修复正文中手写的旧编号；这正是应始终使用标签的原因。移除一级标题处的重置还会改变全篇计数语义，不应作为仅更换分隔符的手段。修改后运行两项编译检查，并至少核对两个连续章节和一个附录中的首个、末个公式及 `@eq-...` 引用。
 
 == 图表编号
 
-公开的 `showIllustrationCatalog` 和 `showTablesCatalog` 只控制目录是否显示，不控制图表编号。作者应继续用标准 `figure` 包裹图片或表格并添加标签，以便编号、目录和引用使用同一元素；不要在图题或正文中手写序号。
+公开的 `include_list_of_figures` 和 `include_list_of_tables` 只控制目录是否显示，不控制图表编号；`include_appendix_figures` 和 `include_appendix_tables` 只控制相应目录是否收录附录条目。作者应继续用标准 `figure` 包裹图片或表格并添加标签，以便编号、目录和引用使用同一元素；不要在图题或正文中手写序号。
 
-正文编号规则位于 `template/nenu-template.typ:225-229`，生成“章号.章内号”；`nenu-back-matter` 的 `appendices` 区域由 `template/modules/template-appendix.typ` 局部切换为 `A.1`、`B.2`。`template/nenu-template.typ:198-207` 在每个一级标题开始时分别重置 `kind: table` 和 `kind: image` 的计数器；表题位置和题注字号另由 `template/nenu-template.typ:235-238` 控制。若规范要求连字符，只修改对应区域的内部编号格式：
+图表编号由 `template/config/rules.typ` 的 `figure-numbering` 生成正文 `1.1` 和附录 `A.1`；`begin-appendices`、`end-appendices` 通过附录状态切换编号。`template/nenu-template.typ` 在每个一级标题开始时分别重置 `kind: table` 和 `kind: image` 的计数器，并设置表题位置和题注字号。若规范要求连字符，应保留正文和附录分支：
 
 #figure(
   caption: [图表连字符编号规则],
   kind: image,
   ```typst
-  set figure(numbering: (n) => {
-    numbering("1-1", counter(heading).get().first(), n)
-  })
+  #let figure-numbering(n) = chapter-numbering(n, "1-1", "A-1")
   ```
 )
 
-这条通用 `figure` 规则会影响图片、表格以及其他 figure 种类，但当前章首只显式重置图片和表格；若论文引入自定义 `kind`，应先确认其计数是否需要单独重置。改变格式会同步改变自动引用和目录中的显示，手写图号或表号则会失去同步。修改后运行两项编译检查，并核对至少两个章节中的图片和表格是否分别递增、跨章归零，正文引用以及插图目录和附表目录是否一致。
+这条通用 `figure` 规则会影响图片、表格以及其他 figure 种类，但当前章首只显式重置图片和表格；若论文引入自定义 `kind`，应先确认其计数是否需要单独重置。插图目录和附表目录的前缀在 `template/nenu-template.typ` 的 outline 规则中另行调用 `chapter-numbering-at` 并写有 `"1.1"`、`"A.1"`，因此更换分隔符时必须同步修改这两处模式，否则题注和目录会不一致。修改后运行两项编译检查，并核对至少两个章节和一个附录中的图、表、正文引用及目录。
 
 == 章节引用前后缀
 
-章节标题只需使用标准标题和标签，正文通过 `@标签` 或 `#ref(<标签>)` 引用。正文标题的编号层级由 `template/nenu-template.typ:300-301` 设置为 `"1.1.1.1"`，附录标题由 `template/modules/template-appendix.typ` 切换为“附录A”和 `A.1.1.1`；普通引用的前后缀则由 `template/nenu-template.typ:302-316` 单独改写。正文一级标题引用显示为“第一章”，附录一级标题显示为“附录A”，二级及以下显示对应编号并追加“小节”。非标题引用会在 `template/nenu-template.typ:304-307` 原样返回，因此公式、图片、表格和文献引用仍使用元素自身的补充文字与编号。
+章节标题只需使用标准标题和标签，正文通过 `@标签` 或 `#ref(<标签>)` 引用。标题显示由 `template/config/rules.typ` 中理工科、社科及附录的 numberer 决定；普通标题引用则由同文件的 `heading-ref-numbering` 单独改写。当前正文一级标题引用显示为“第一章”，附录一级标题显示为“附录A”，二级及以下显示阿拉伯数字路径并追加“小节”。非标题引用交回 Typst，因此公式、图片、表格和文献引用仍使用元素自身的补充文字与编号。
 
-前后缀没有公开 `info` 或 `config` 字段。要改变全篇章节引用文字，应编辑内部 `body` 分支，而不是在正文每次引用前后拼接文字。当前核心片段为：
+前后缀没有公开 `information` 或 `config` 字段。要改变全篇章节引用文字，应编辑 `template/config/rules.typ` 的 `heading-ref-numbering`，而不是在正文每次引用前后拼接文字。当前核心片段为：
 
 #figure(
   caption: [章节引用文字生成规则],
   kind: image,
   ```typst
-  let appendix = el.at("supplement", default: none) == [附录]
-  let body = if el.level == 1 {
-    counter(heading).display(if appendix {"附录A"} else {"第一章"}, at: loc)
+  if appendix {
+    if level == 1 {
+      numbering("附录A", nums.first())
+    } else {
+      numbering("A.1.1.1", ..nums) + [小节]
+    }
   } else {
-    counter(heading).display(if appendix {"A.1.1.1"} else {"1.1.1.1"}, at: loc) + [小节]
+    if level == 1 {
+      numbering("第一章", nums.first())
+    } else {
+      numbering("1.1.1.1", ..nums) + [小节]
+    }
   }
   ```
 )
 
-例如，一级标题若需阿拉伯数字可使用源文件中已经保留的 `"第1章"` 格式；低层级若需“第...节”，则应在同一分支统一加入前缀和后缀。只改引用分支不会改变标题本身和目录中的编号；若两处都要改变，还需同步评估 `template/nenu-template.typ:300-301` 的标题编号规则。修改后应搜索正文中已经手写的“第”“章”“节”，避免产生重复词，并运行两项编译检查，分别核对一级、二级、三级、四级标题引用以及至少一个非标题引用。
+例如，一级标题若需阿拉伯数字可将正文分支改为 `numbering("第1章", nums.first())`；低层级若需“第...节”，则应在同一分支统一加入前缀和后缀。只改引用函数不会改变标题本身和目录中的编号；若两处都要改变，还需同步评估正文与附录 numberer。当前社科标题显示“一、”“（一）”等格式，但二级及以下引用仍使用阿拉伯数字路径，这是模板现有边界。修改后应搜索正文中已经手写的“第”“章”“节”，避免产生重复词，并运行两项编译检查，分别核对理工科和社科的一至四级标题引用、附录引用以及至少一个非标题引用。

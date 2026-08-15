@@ -4,7 +4,7 @@
 
 将论文图片放在 `examples/my-thesis/assets` 中，而不是放进模板目录。常用格式包括 PNG、JPEG、SVG、WebP 和 PDF；流程图、结构图等优先使用 SVG，照片和实验截图通常使用 PNG 或 JPEG。
 
-如果论文需要大量的图片，也可以分章节存储。推荐在 `contents` 文件夹下建立多个章节文件夹，然后将图片放置于章节文件夹下的 `assets` 文件夹下。
+如果论文需要大量图片，也可以分章节存储。可在 `contents` 下建立章节文件夹，并在各章内统一使用 `imgs` 或 `assets` 子目录；本章源码采用与文件同级的 `imgs` 目录，因此下面的相对路径均写作 `imgs/...`。
 
 Typst 支持的插图格式包括：“png”、“jpg”、“gif”、“svg”、“pdf”、“webp”，以及原始像素数据（即未经编码的图像数据）。GIF 在 PDF 中只会输出静态画面。
 
@@ -28,7 +28,7 @@ image 函数的更多参数和更多示例见 Typst 文档#footnote[#link("https
 
 #figure(
   caption: [SVG 插图颜色替换示例],
-  // SVG 本质上是文本，可以在载入前替换其中的颜色值。
+  /* SVG 本质上是文本，可以在载入前替换其中的颜色值。 */
   image(bytes(read("imgs/typst.svg").replace("currentColor", "#338eba")), width: 35%, alt: "蓝色 Typst 标志"),
 ) <fig-svg-color>
 
@@ -42,8 +42,8 @@ image 函数的更多参数和更多示例见 Typst 文档#footnote[#link("https
   caption: [多图纵向排版],
   kind: image,
   grid(
-    columns: 40%, // 单列，宽度为 40%
-    row-gutter: 0.5em,  // 行间隔
+    columns: 40%, /* 单列，宽度为 40% */
+    row-gutter: 0.5em,  /* 行间隔 */
     image("imgs/AL.png"),
     image("imgs/BL.png"),
     image("imgs/CL.png"),
@@ -58,8 +58,8 @@ image 函数的更多参数和更多示例见 Typst 文档#footnote[#link("https
   kind: image,
   grid(
     columns: 4,
-    rows: 25%,                // 控制行高为 25%
-    column-gutter: 0.5em,     // 列间隔
+    rows: 25%,                /* 控制行高为 25% */
+    column-gutter: 0.5em,     /* 列间隔 */
     image("imgs/AH.png"),
     image("imgs/BH.png"),
     image("imgs/CH.png"),
@@ -71,8 +71,8 @@ image 函数的更多参数和更多示例见 Typst 文档#footnote[#link("https
   caption: [多图矩阵排版],
   kind: image,
   grid(
-    columns: (120pt, 120pt),  // 限制列宽为 120pt
-    gutter: 0.5em,            // 行列间隔
+    columns: (120pt, 120pt),  /* 限制列宽为 120pt */
+    gutter: 0.5em,            /* 行列间隔 */
     image("imgs/A.png"),
     image("imgs/B.png"),
     image("imgs/C.png"),
@@ -85,9 +85,9 @@ image 函数的更多参数和更多示例见 Typst 文档#footnote[#link("https
   kind: image,
   grid(
     columns: 2,
-    rows: 120pt,          // 限制行高为 120pt
-    gutter: 0.5em,        // 行列间隔
-    align: (right, left), // 控制每列的对齐方式
+    rows: 120pt,          /* 限制行高为 120pt */
+    gutter: 0.5em,        /* 行列间隔 */
+    align: (right, left), /* 控制每列的对齐方式 */
     image("imgs/AH.png"),
     image("imgs/B.png"),
     image("imgs/CH.png"),
@@ -97,8 +97,8 @@ image 函数的更多参数和更多示例见 Typst 文档#footnote[#link("https
 
 如果在 grid 里内嵌 figure 就可以每张图分别编号。注意当前模板没有自动生成“(a)”“(b)”子图编号。
 
-// align 命令用于居中显示
-// 使用 box 包裹 grid 并指定 inset 参数，使得 grid 上下正文的间距为 1em
+/* align 命令用于居中显示。 */
+/* 使用 box 包裹 grid 并指定 inset 参数，使得 grid 上下正文的间距为 1em。 */
 #align(center,
   box(inset: 1em,
     grid(

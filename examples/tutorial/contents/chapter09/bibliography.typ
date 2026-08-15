@@ -93,7 +93,7 @@
   ```
 )
 
-西文和俄文姓名建议使用 `姓, 名` 形式；团体责任者使用双层花括号。数据库应直接保存 UTF-8 字符，不要使用当前解析器不支持的 LaTeX 日文或西里尔字母命令。正文中的日文示例见 @toshokanyogo2004，俄文示例见 @kochetkov1993。
+西文和俄文姓名建议使用 `姓, 名` 形式；团体责任者使用双层花括号。数据库应直接保存 UTF-8 字符，不要使用当前解析器不支持的 LaTeX 日文或西里尔字母命令。正文中的日文示例见@toshokanyogo2004，俄文示例见@kochetkov1993。
 
 == 初始化文献引擎
 
@@ -103,6 +103,7 @@
   caption: [初始化文献引擎并显式列出全部开关],
   kind: image,
   ```typst
+  #import "settings.typ": config, information
   #import "/template/nenu-template.typ": *
   #show: init-bibliography.with(
     read("references.bib"),
@@ -113,11 +114,11 @@
     show-accessed: false,
     show-backlinks: false,
   )
-  #show: nenu-template.with(config, info)
+  #show: nenu-template.with(config, information)
   ```
 )
 
-两个 `show` 规则依次处理同一份文档，因此模板生成的摘要和用户正文共享引用顺序。`style` 也可设为 `"author-date"`。五个显示开关均默认为 `false`；教程入口显式关闭它们以缩短完整文献列表。`show-online: false` 只隐藏类型标识中的 `/OL`，`show-doi: false` 隐藏 DOI、CSTR、URN 和 PID 等永久标识符，`show-backlinks: false` 只关闭文献表后的返回箭头。
+两个 `show` 规则依次处理同一份文档，因此模板生成的摘要和用户正文共享引用顺序。`style` 也可设为 `"author-date"`。五个显示开关均默认为 `true`；教程入口显式关闭它们以缩短完整文献列表。`show-online: false` 只隐藏类型标识中的 `/OL`，`show-doi: false` 隐藏单独著录的 DOI、CSTR、URN 和 PID 等永久标识符，`show-backlinks: false` 只关闭文献表后的返回箭头。若永久标识符同时保存在 `url` 字段中，还需通过 `show-url` 决定该 URL 是否显示。
 
 == 正文引用
 
@@ -140,8 +141,8 @@
     (key: "fengyoulan2008", supplement: [第1版自序]),
     (key: "ayang2023", supplement: [15-18]),
   )。
-  #nocite("luxunmuseum2021") // 纳入列表但不显示正文标记
-  #nocite("*")               // 纳入数据库中的全部记录
+  #nocite("luxunmuseum2021") /* 纳入列表但不显示正文标记 */
+  #nocite("*")               /* 纳入数据库中的全部记录 */
   ```
 )
 
@@ -149,23 +150,21 @@
 
 == 参考文献、附录和后记
 
-`nenu-back-matter` 负责输出参考文献、自动编号 `appendices` 中的附录，再排版无编号的后记。正式论文默认只输出已引用或通过 `nocite` 纳入的记录；教程使用 `full: true` 检查全部 158 条记录：
+正式论文调用 `nenu-bibliography-render()` 时默认只输出已引用或通过 `nocite` 纳入的记录；教程使用 `full: true` 检查全部 158 条记录。参考文献之后通过 `begin-appendices` 和 `end-appendices` 显式切换附录状态，后者同时生成无编号的“后记”标题：
 
 #figure(
   caption: [后置内容装配],
   kind: image,
   ```typst
-  #nenu-back-matter(
-    references: nenu-bibliography.with(full: true),
-    appendices: [
-      = 补充材料
-      这里撰写附录内容。
-    ],
-  )[
-    = 后记
-    这里撰写后记。
-  ]
+  #nenu-bibliography-render(full: true)
+
+  #begin-appendices()
+  = 补充材料
+  这里撰写附录内容。
+  #end-appendices()
+
+  这里撰写后记正文。
   ```
 )
 
-`nenu-bibliography` 在顺序编码制下使用两列 `grid` 分隔右对齐的序号与文献文本，并保留条目目标和回链；著者-出版年制继续使用段落布局。只需要常规列表时可省略 `references` 参数；使用原生 CSL 时可传入 `references: render-bibliography`。底层 `render-bibliography`、自定义 `renderer`、CSL/CSL-M 路由和条目记录字段详见仓库根目录的 `BIBLIOGRAPHY.md`。
+`nenu-bibliography-render` 在顺序编码制下使用左对齐的两列 `grid` 分隔序号与文献文本，并保留条目目标；只有 `show-backlinks: true` 时才显示回链。著者-出版年制继续使用段落布局。使用内置 GB/T 处理器时直接调用该函数即可；使用原生 CSL 时不能使用它提供的自定义 renderer，应改为直接调用底层 `render-bibliography()`。底层 API、CSL/CSL-M 路由和条目记录字段以 `template/modules/bibliography.typ` 与其子模块的当前导出为准。

@@ -34,7 +34,7 @@ Typst 使用等号表示标题层级。模板仅为一级至四级标题提供�
   caption: [标记模式下的段落与换行],
   kind: image,
   typst-code-example(```typst
-  #set par(first-line-indent: 2em)
+  #set par(first-line-indent: (amount: 2em, all: true))
   谁还有多余
   资金。
 
@@ -59,9 +59,9 @@ Typst 中的列表包含有序列表和无序列表，两者默认都不使用�
 9. 使用数字和点号组合可以指定起始编号；
 + 如果在数字点号组合后面使用加号，编号将自动增加。
 
-// 使用 pagebreak 可以将内容强制切换到下一页。
-// 避免某些内容的不连续造成不好的阅读体验。
-//#pagebreak()
+/* 使用 pagebreak 可以将内容强制切换到下一页，
+   避免某些内容的不连续造成不好的阅读体验。 */
+/* #pagebreak() */
 
 *无序列表*：使用短横线\-后跟空格和列表项。使用两个空格缩进表示子项。例如：
 
@@ -74,26 +74,26 @@ Typst 中的列表包含有序列表和无序列表，两者默认都不使用�
 
 使用星号包裹文本会渲染成粗体。例如，\*重要内容\*会渲染为*重要内容*。
 
-需要注意的是，由于学校官方模板使用的宋体、黑体其字体只提供单级字重，Typst 无法进行加粗。所以目前模板中所有宋体、黑体加粗样式都是通过 cuti 包对文字进行描边的*伪粗体*（其实 Word 的做法也是一样的）。*描边不等于粗体！*
+需要注意的是，仓库附带的宋体、黑体只有单级字重，因此模板通过 cuti 包把粗体中文转换为描边的*伪粗体*。该全局规则会匹配中文文本及部分中文标点，不只影响宋体和黑体；即使指定微软雅黑，`weight: "bold"` 的中文示例也会被规则转换为描边。*描边不等于字体原生粗体！*
 
-以 Times New Roman 和微软雅黑为例，对比描边和正常加粗的效果。
+以下以 Times New Roman 和微软雅黑展示模板中的常规字重、`weight: "bold"` 以及显式描边。Times New Roman 的粗体使用字体字重，中文粗体则会经过模板的伪粗体规则。
 
 #figure(
-  caption: [Times New Roman 与微软雅黑的正常粗体与描边粗体对比],
+  caption: [Times New Roman 与微软雅黑在模板粗体规则下的对比],
   kind: image,
   grid(
     columns: 3,
     column-gutter: 1em,
     align: center + horizon,
     [常规字重：],
-    text(font: FONT_TIMES, size: 48pt, weight: "regular", "ABC123"),
-    text(font: FONT_YAHEI, size: 48pt, weight: "regular", "微软雅黑"),
-    [正常粗体：],
-    text(font: FONT_TIMES, size: 48pt, weight: "bold", "ABC123"),
-    text(font: FONT_YAHEI, size: 48pt, weight: "bold", "微软雅黑"),
-    [描边粗体：],
-    fakebold(text(font: FONT_TIMES, size: 48pt, "ABC123")),
-    fakebold(text(font: FONT_YAHEI, size: 48pt, "微软雅黑"))
+    text(font: FONT_TIMES, size: 42pt, weight: "regular", "ABC123"),
+    text(font: FONT_YAHEI, size: 42pt, weight: "regular", "微软雅黑"),
+    [`weight: "bold"`：],
+    text(font: FONT_TIMES, size: 42pt, weight: "bold", "ABC123"),
+    text(font: FONT_YAHEI, size: 42pt, weight: "bold", "微软雅黑"),
+    [显式描边：],
+    fakebold(text(font: FONT_TIMES, size: 42pt, "ABC123")),
+    fakebold(text(font: FONT_YAHEI, size: 42pt, "微软雅黑"))
   )
 )
 
@@ -118,17 +118,16 @@ Typst 中的列表包含有序列表和无序列表，两者默认都不使用�
 
 == 注释
 
-注释用于在论文源码中添加说明，不会渲染到最终文档中。在 Typst 中，使用双斜杠\/\/表示单行注释，使用 \/\* 注释 \*\/ 表示多行注释。例如：
+注释用于在论文源码中添加说明，不会渲染到最终文档中。Typst 支持单行和块注释；本教程源码统一使用 \/\* 注释 \*\/ 块注释，并将其作为仓库后续修改应遵守的写法。例如：
 
 #figure(
   caption: [注释示例],
   kind: image,
   typst-code-example(```typst
-  说话！  //吃吧。
-
-  从从容容，游刃有余
-  /* 匆匆忙忙
-    连滚带爬 */
+  说话！
+  /* 吃吧。
+     从从容容，游刃有余，
+     不要匆匆忙忙、连滚带爬。 */
   ```)
 )
 
@@ -158,7 +157,7 @@ Typst 中的列表包含有序列表和无序列表，两者默认都不使用�
 
 == 脚注
 
-脚注代码 `#footnote[补充说明]`。模板会在每页重新计算脚注编号，因此不要手工输入圈码或在正文中模拟脚注线#footnote[这是一个脚注]。
+脚注代码 `#footnote[补充说明]`。模板为正文及其后的页面设置页眉，并在该作用域内逐页重置脚注编号；摘要、目录等更早的前置内容不在这条重置规则内。不要手工输入圈码或在正文中模拟脚注线#footnote[这是一个脚注]。
 
 == 标签与交叉引用 <sec-labels>
 
@@ -179,7 +178,7 @@ Typst 中的列表包含有序列表和无序列表，两者默认都不使用�
   ```
 )
 
-标签建议使用统一前缀：章节用 `sec-`，图片用 `fig-`，表格用 `tab-`，公式用 `eq-`。引用时写 `@标签`，Typst 会自动计算编号并添加前缀、后缀。例如，本小节可以直接引用为 @sec-labels。除了使用 `@标签` 方式引用以外，也可以通过 `#ref(<标签>)` 命令来引用，如#ref(<sec-writing>)。
+标签建议使用统一前缀：章节用 `sec-`，图片用 `fig-`，表格用 `tab-`，公式用 `eq-`。引用时写 `@标签`，Typst 会自动计算编号并添加前缀、后缀。例如，本小节可以直接引用为 @sec-labels。除了使用 `@标签` 方式引用以外，也可以通过 `#ref(<标签>)` 命令来引用，如#ref(<sec-writing>)。当前社科模式的二级及以下标题显示“一、”“（一）”等格式，但标题引用仍使用阿拉伯数字路径并追加“小节”；正式使用社科模式时应核对引用文字。
 
 == 样式边界
 
@@ -194,7 +193,7 @@ Typst 中的列表包含有序列表和无序列表，两者默认都不使用�
     首行不缩进。
 
     #block[
-      #set par(first-line-indent: 2em)
+      #set par(first-line-indent: (amount: 2em, all: true))
       这里首行缩进。
 
       这里也缩进。

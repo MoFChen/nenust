@@ -1,4 +1,4 @@
-// 在模板中，用于展示 typst 代码及其渲染效果，另起项目时不需要可删除
+/* 在模板中用于展示 Typst 代码及其渲染效果，另起项目时不需要，可删除。 */
 #let typst-code-example(x) = grid(
   columns: 3, column-gutter: 1em,
   align: (horizon + left, horizon, horizon + left),

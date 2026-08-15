@@ -8,7 +8,7 @@
 
 比如非厄米哈密顿量的本征值方程 $hat(H)|psi_n chevron.r=E_n|psi_n chevron.r, hat(H)!=hat(H)^dagger$，这是一个行内公式。
 
-模板会在每章开始时重置公式计数器，并按“章号.公式号”生成编号。需要引用的独立公式应添加唯一标签，不要手工输入括号编号。
+模板会在每个一级标题开始时重置公式计数器，正文按 `(章号.公式号)`、附录按 `(附录字母.公式号)` 生成编号。需要引用的独立公式应添加唯一标签，不要手工输入括号编号。
 
 == 常用语法
 
@@ -116,16 +116,14 @@ Typst 会根据主体大小自动调整上下标位置。例如 ${NN^1_2}^3_4$ �
 
 在 Typst 中提供了两个模块 sym#footnote[#link("https://typst.app/docs/reference/symbols/sym/")] <footnote-sym-link> 和 emoji#footnote[#link("https://typst.app/docs/reference/symbols/emoji/")] <footnote-emoji-link> ，这两个模块用于为符号和表情符号分配名称，从而便于使用普通键盘进行输入。当然，也可以直接在文本和公式中输入 Unicode 符号。
 
-如下表所示，在数学模式或标记模式中都可以直接使用域引用（sym.zeta）的方式或Unicode码（\\u{03B6}）的方式来表示符号。不同的区别在于，数学模式下可以直接省略`#sym` 。
+如下表所示，数学模式可直接使用符号名 `zeta` 或 Unicode 码（\\u{03B6}）；标记模式则使用代码表达式 `#sym.zeta` 或直接输入 Unicode 字符。`sym.zeta` 本身不是数学模式中的变量，不能直接写成 `$sym.zeta$`。
 
 #figure(
   caption: [符号使用方式],
   table(
     columns: 3,
     table.hline(stroke: 1.2pt),
-    table.cell(colspan: 1)[模式],
-    table.cell(colspan: 1)[示例代码],
-    table.cell(colspan: 1)[渲染样式],
+    table.header([模式], [示例代码], [渲染样式]),
     table.hline(stroke: 0.5pt),
     table.cell(rowspan: 2)[数学模式],
     table.cell(rowspan: 1)[`$zeta$`],
