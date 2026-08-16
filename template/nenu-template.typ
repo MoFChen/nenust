@@ -200,18 +200,8 @@
         } else {
           appendix-heading-numberer(..counter(heading).at(loc))
         }
-      } else if el.func() == figure and el.kind == image {
-        /* 插图 */
-        let n = counter(figure.where(kind: image)).at(loc).first()
-        let number = chapter-numbering-at(loc, n, "1.1", "A.1")
-        [图 #number]
-      } else if el.func() == figure and el.kind == table {
-        /* 表格 */
-        let n = counter(figure.where(kind: table)).at(loc).first()
-        let number = chapter-numbering-at(loc, n, "1.1", "A.1")
-        [表 #number]
       } else {
-        /* 普通正文标题等 */
+        /* 普通正文标题、图表等 */
         it.prefix()
       }
       link(loc, it.indented(prefix, it.inner()))

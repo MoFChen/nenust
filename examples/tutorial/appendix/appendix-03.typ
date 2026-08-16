@@ -315,7 +315,7 @@ A3 外封面只在 `config.include_outer_cover` 为 `true` 时生成。`template
 
 公开的 `include_list_of_figures` 和 `include_list_of_tables` 只控制目录是否显示，不控制图表编号；`include_appendix_figures` 和 `include_appendix_tables` 只控制相应目录是否收录附录条目。作者应继续用标准 `figure` 包裹图片或表格并添加标签，以便编号、目录和引用使用同一元素；不要在图题或正文中手写序号。
 
-图表编号由 `template/config/rules.typ` 的 `figure-numbering` 生成正文 `1.1` 和附录 `A.1`；`begin-appendices`、`end-appendices` 通过附录状态切换编号。`template/nenu-template.typ` 在每个一级标题开始时分别重置 `kind: table` 和 `kind: image` 的计数器，并设置表题位置和题注字号。若规范要求连字符，应保留正文和附录分支：
+图表编号由 `template/config/rules.typ` 的 `figure-numbering` 生成正文 `1.1` 和附录 `A.1`；`begin-appendices`、`end-appendices` 通过附录状态切换编号。`chapter-numbering` 在图表目标位置读取一级标题计数，因此跨章引用仍使用图表所在章的编号。`template/nenu-template.typ` 在每个一级标题开始时分别重置 `kind: table` 和 `kind: image` 的计数器，并设置表题位置和题注字号。若规范要求连字符，应保留正文和附录分支：
 
 #figure(
   caption: [图表连字符编号规则],
@@ -325,7 +325,7 @@ A3 外封面只在 `config.include_outer_cover` 为 `true` 时生成。`template
   ```
 )
 
-这条通用 `figure` 规则会影响图片、表格以及其他 figure 种类，但当前章首只显式重置图片和表格；若论文引入自定义 `kind`，应先确认其计数是否需要单独重置。插图目录和附表目录的前缀在 `template/nenu-template.typ` 的 outline 规则中另行调用 `chapter-numbering-at` 并写有 `"1.1"`、`"A.1"`，因此更换分隔符时必须同步修改这两处模式，否则题注和目录会不一致。修改后运行两项编译检查，并核对至少两个章节和一个附录中的图、表、正文引用及目录。
+这条通用 `figure` 规则会影响图片、表格以及其他 figure 种类，但当前章首只显式重置图片和表格；若论文引入自定义 `kind`，应先确认其计数是否需要单独重置。插图目录和附表目录使用 Typst 原生的 `outline.entry.prefix()`，会自动采用图表实际的 `numbering` 和 `supplement`，无需维护第二套编号模式。自定义编号时应设置 `figure.numbering`，不要只在题注中手写序号。修改后运行两项编译检查，并核对至少两个章节和一个附录中的图、表、正文引用及目录。
 
 == 章节引用前后缀
 

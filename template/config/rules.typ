@@ -39,7 +39,7 @@
 
 /* 标题视觉样式 */
 #let heading-styles = (
-  // 一级标题
+  /* 一级标题 */
   (
     before: 42pt,
     after: 29pt,
@@ -47,7 +47,7 @@
     block: (width: 100%),
     text: (font: FONTS_HEITI, size: 16pt, weight: "regular")
   ),
-  // 二级标题
+  /* 二级标题 */
   (
     before: 0pt,
     after: 4pt,
@@ -55,7 +55,7 @@
     block: (breakable: false),
     text: (font: FONTS_HEITI, size: 14pt, weight: "regular")
   ),
-  // 三级标题
+  /* 三级标题 */
   (
     before: 0pt,
     after: 2pt,
@@ -63,7 +63,7 @@
     block: (breakable: false),
     text: (size: 12pt, weight: "bold")
   ),
-  // 四级标题
+  /* 四级标题 */
   (
     before: -4pt,
     after: 2pt,
@@ -112,9 +112,7 @@
 }
 
 /* 正文中的章内编号 */
-#let chapter-numbering(n, normal, appendix) = context {
-  chapter-numbering-at(here(), n, normal, appendix)
-}
+#let chapter-numbering(n, normal, appendix) = chapter-numbering-at(here(), n, normal, appendix)
 
 /* 图、表编号 */
 #let figure-numbering(n) = chapter-numbering(n, "1.1", "A.1")
@@ -129,7 +127,7 @@
   let front-start = counter(page).at(<nenu-front-matter-start>).first()
   let main-start = counter(page).at(<nenu-main-matter-start>).first()
   if n < front-start {
-    // 封面、声明页等
+    /* 封面、声明页等 */
     none
   } else if n < main-start {
     numbering("I", n - front-start + 1)
