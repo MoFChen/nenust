@@ -2,9 +2,9 @@
   anonymous: false,
   double_sided: false,
 
-  degree_level: "doctoral", // "master"
-  degree_type: "academic",  // "professional"
-  discipline_group: "science",  // "social"
+  degree_level: "doctoral", /* "master" */
+  degree_type: "academic",  /* "professional" */
+  discipline_group: "science",  /* "social" */
 
   include_outer_cover: true,
   include_list_of_figures: true,
@@ -15,17 +15,12 @@
 )
 
 #let information = (
-  institution: (
-    name_zh: "东北师范大学",
-    name_en: "Northeast Normal University",
-    school_code: "10200"
-  ),
   security: (zh: "无", en: "None"),
   title: (
     zh: "",
     en: "",
-    //display_zh: [],
-    //display_en: []
+    /* display_zh: [], */
+    /* display_en: [], */
   ),
   abstract: (
     zh: "",

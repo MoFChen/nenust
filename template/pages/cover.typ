@@ -139,7 +139,7 @@
     #place(top + center, dy: 158pt,
       text(size: 16pt, fill: black, [
         #set par(leading: 0pt, spacing: 1pt)
-        #v_cjk_latin(e.title.zh)
+        #v_cjk_latin(e.title.plain_zh)
       ])
     )
   ] else [

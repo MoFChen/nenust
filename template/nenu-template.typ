@@ -141,14 +141,14 @@
       /* 一级标题 */
       if it.level == 1 {
         let raw-chapter = counter(heading).get().first()
-        // 第一章不分页；正文从第二章开始分页；所有附录一级标题都分页。
+        /* 第一章不分页；正文从第二章开始分页；所有附录一级标题都分页。 */
         if is-appendix-at(here()) or raw-chapter != 1 {
           pagebreak2()
         }
-        // 每章 / 每个附录重新计数图、表、公式。
+        /* 每章 / 每个附录重新计数图、表、公式。 */
         reset-chapter-counters()
       }
-      // 根据 heading-styles 统一绘制标题
+      /* 根据 heading-styles 统一绘制标题 */
       v(style.before)
       align(
         style.alignment,
@@ -180,13 +180,13 @@
 
     /* 是否隐藏当前条目 */
     let hidden = (
-      // 正文目录：附录只列一级标题
+      /* 正文目录：附录只列一级标题 */
       (el.func() == heading and appendix and el.level > 1)
 
-      // 插图目录：按开关决定是否列出附录插图
+      /* 插图目录：按开关决定是否列出附录插图 */
       or (el.func() == figure and el.kind == image and appendix and not config.include_appendix_figures)
 
-      // 附表目录：按开关决定是否列出附录附表
+      /* 附表目录：按开关决定是否列出附录附表 */
       or (el.func() == figure and el.kind == table and appendix and not config.include_appendix_tables)
     )
 
@@ -194,24 +194,24 @@
       none
     } else {
       let prefix = if el.func() == heading and appendix {
-        // 附录标题
+        /* 附录标题 */
         if el.numbering == none {
           none
         } else {
           appendix-heading-numberer(..counter(heading).at(loc))
         }
       } else if el.func() == figure and el.kind == image {
-        // 插图
+        /* 插图 */
         let n = counter(figure.where(kind: image)).at(loc).first()
         let number = chapter-numbering-at(loc, n, "1.1", "A.1")
         [图 #number]
       } else if el.func() == figure and el.kind == table {
-        // 表格
+        /* 表格 */
         let n = counter(figure.where(kind: table)).at(loc).first()
         let number = chapter-numbering-at(loc, n, "1.1", "A.1")
         [表 #number]
       } else {
-        // 普通正文标题等
+        /* 普通正文标题等 */
         it.prefix()
       }
       link(loc, it.indented(prefix, it.inner()))
@@ -265,8 +265,8 @@
     cover-param.title.zh,
     cover-param.author.val.zh,
     cover-param.supervisors.val.map(s => [#s.name.zh #s.academic_title.zh]).join("；"),
-    information.defense.reviewers,
-    information.defense.committee
+    info.defense.reviewers,
+    info.defense.committee
   )
   pagebreak2()
   /* 声明 */

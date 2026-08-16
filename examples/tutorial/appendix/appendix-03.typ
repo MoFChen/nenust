@@ -11,7 +11,7 @@
 
 == 论文标题
 
-`template/nenu-template.typ` 使用 `information.title.zh` 设置 PDF metadata；`template/modules/utils.typ` 的 `format_info` 将可选的 `display_zh`、`display_en` 用于封面排版，未提供时分别回退到 `zh`、`en`。因此，`zh` 和 `en` 必须保留为纯字符串。当前博士 A3 书脊仍会读取排版后的中文标题并交给字符串函数，所以启用博士外封面时不要把 `display_zh` 设置为内容块；`display_en` 不经过书脊，可用于英文复杂公式：
+`template/nenu-template.typ` 使用 `information.title.zh` 设置 PDF metadata；`template/modules/utils.typ` 的 `format_info` 将可选的 `display_zh`、`display_en` 用于固定页面排版，未提供时分别回退到 `zh`、`en`。因此，`zh` 和 `en` 必须保留为纯字符串。博士 A3 书脊始终使用纯文本 `zh`，所以两个显示字段都可以承载复杂公式等可排版内容：
 
 #figure(
   caption: [模板 Title 参数填写示例],
@@ -20,6 +20,7 @@
   title: (
     zh: "含参数 alpha 的论文标题",
     en: "A Thesis Title with Parameter Alpha",
+    display_zh: [含参数 $alpha$ 的论文标题],
     display_en: [A Thesis Title with Parameter $alpha$],
   ),
   ```
@@ -39,7 +40,7 @@
 
 === A3封面书脊标题
 
-A3 外封面只在 `config.include_outer_cover` 为 `true` 时生成。`template/pages/cover.typ` 的 `page-cover-a3` 又只在 `degree_level: "doctoral"` 的分支生成书脊文字；`degree_type` 选择书脊上的“学”或“专”标记。书脊没有独立的公开标题字段，当前读取 `format_info` 处理后的中文显示标题。要看到博士书脊，现有 `config` 中应使用：
+A3 外封面只在 `config.include_outer_cover` 为 `true` 时生成。`template/pages/cover.typ` 的 `page-cover-a3` 又只在 `degree_level: "doctoral"` 的分支生成书脊文字；`degree_type` 选择书脊上的“学”或“专”标记。书脊没有独立的公开标题字段，读取 `format_info` 从 `information.title.zh` 保留的 `plain_zh`；`display_zh` 用于封面正面、委员会页和博士评语、决议页的中文标题。要看到博士书脊，现有 `config` 中应使用：
 
 #figure(
   caption: [博士论文模板配置示例],
@@ -59,7 +60,7 @@ A3 外封面只在 `config.include_outer_cover` 为 `true` 时生成。`template
   #place(top + center, dy: 158pt,
     text(size: 16pt, fill: black, [
       #set par(leading: 0pt, spacing: 1pt)
-      #v_cjk_latin(e.title.zh)
+      #v_cjk_latin(e.title.plain_zh)
     ])
   )
   ```
@@ -69,7 +70,7 @@ A3 外封面只在 `config.include_outer_cover` 为 `true` 时生成。`template
 
 == A4封面信息栏
 
-`include_outer_cover` 只控制 A3 外封面。`template/nenu-template.typ` 在所有模式下都会生成 A4 中文和英文信息页，当前没有隐藏任一 A4 页的公开开关。公开层可通过 `information.institution`、`security`、`title`、`author`、`supervisors`、`program` 和 `submission_date` 改变内容，并通过 `config.anonymous`、`degree_level`、`degree_type` 选择模板已经实现的匿名、学位层次和学位类型分支；这些开关不能用来微调位置。
+`include_outer_cover` 只控制 A3 外封面。`template/nenu-template.typ` 在所有模式下都会生成 A4 中文和英文信息页，当前没有隐藏任一 A4 页的公开开关。公开层可通过 `information` 中的 `security`、`title`、`author`、`supervisors`、`program` 和 `submission_date` 改变内容，并通过 `config.anonymous`、`degree_level`、`degree_type` 选择模板已经实现的匿名、学位层次和学位类型分支；学校名称和代码固定在模板内部，这些开关也不能用来微调位置。
 
 信息栏的通用几何布局位于 `template/pages/cover.typ` 的 `page-cover-template`。其中底部位置 `dy: -158pt`、行高 `19pt`、单元格内边距 `2pt` 和列结构都是内部常量：
 
@@ -94,17 +95,12 @@ A3 外封面只在 `config.include_outer_cover` 为 `true` 时生成。`template
 
 === 中文信息栏
 
-中文页的数据由 `template/modules/utils.typ` 的 `format_info` 装配：页首使用 `institution.school_code`、`author.student_id` 和 `security.zh`，信息栏使用 `author.name.zh`、各导师的 `name.zh` 与 `academic_title.zh`，以及 `program` 的三个中英文字段。`template/pages/cover.typ` 的 `page-cover-a4-zh` 将这些值放入中文网格，并以 `submission_date.display("[year]年[month]月")` 输出日期。应在现有 `information` 中直接填写完整记录，例如：
+中文页的数据由 `template/modules/utils.typ` 的 `format_info` 装配：页首使用固定学校代码 `10200`、`author.student_id` 和 `security.zh`，信息栏使用 `author.name.zh`、各导师的 `name.zh` 与 `academic_title.zh`，以及 `program` 的三个中英文字段。`template/pages/cover.typ` 的 `page-cover-a4-zh` 将这些值放入中文网格，并以 `submission_date.display("[year]年[month]月")` 输出日期。应在现有 `information` 中直接填写完整记录，例如：
 
 #figure(
   caption: [模板配置填写示例],
   kind: image,
   ```typst
-  institution: (
-    name_zh: "东北师范大学",
-    name_en: "Northeast Normal University",
-    school_code: "10200",
-  ),
   security: (zh: "无", en: "None"),
   author: (name: (zh: "张三", en: "Zhang San"), student_id: "学号"),
   supervisors: (
@@ -120,9 +116,9 @@ A3 外封面只在 `config.include_outer_cover` 为 `true` 时生成。`template
   ```
 )
 
-`config.degree_type` 在 `format_info` 中决定中文标签是“一级学科/二级学科”还是“学位类别/学位领域”，不要为了视觉对齐选择错误的论文类型。`config.anonymous` 会清空作者、导师和学科等值，因此匿名模式下修改这些公开字段不会显示。
+`config.degree_type` 在 `format_info` 中决定中文标签是“一级学科/二级学科”还是“学位类别/学位领域”，不要为了视觉对齐选择错误的论文类型。`config.anonymous` 会清空作者、导师、学科和评审等值，因此匿名模式下修改这些公开字段不会显示。
 
-非匿名模式会通过 `template/modules/utils.typ` 的 `format_cjk_name` 格式化作者和导师姓名；当前委员会页仍使用原始记录。两字姓名插入 `1em` 间距的内部规则位于同一文件：
+非匿名模式会通过 `template/modules/utils.typ` 的 `format_cjk_name` 格式化作者姓名，中文封面还会在排版导师姓名时调用同一函数；委员会姓名保持用户填写的字符串，匿名模式下则使用清空后的记录。两字姓名插入 `1em` 间距的内部规则位于同一文件：
 
 #figure(
   caption: [模板自动处理姓名间距],

@@ -18,16 +18,11 @@
 )
 
 #let information = (
-  institution: (
-    name_zh: "东北师范大学",
-    name_en: "Northeast Normal University",
-    school_code: "10200"
-  ),
   security: (zh: "无", en: "None"),
   title: (
     zh: "东北师范大学研究生学位论文 Typst 模板使用教程",
     en: "A Practical Guide to the NENU Graduate Thesis Typst Template",
-    /* display_zh 内容块暂不兼容博士 A3 书脊。 */
+    /* display_zh: [], */
     /* display_en: [], */
   ),
   abstract: (

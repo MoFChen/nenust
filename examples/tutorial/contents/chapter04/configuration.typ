@@ -9,7 +9,7 @@
     table.hline(stroke: 1.2pt),
     table.header([字段],[解释]),
     table.hline(stroke: 0.5pt),
-    [`anonymous`],[隐藏封面等页面中的作者、导师和学科信息；评审页例外见下文],
+    [`anonymous`],[隐藏固定页面中的作者、导师、学科和评审信息],
     [`double_sided`],[是否按双面打印要求插入分页],
     [`degree_level`],[`"master"` 为硕士，`"doctoral"` 为博士],
     [`degree_type`],[`"academic"` 为学术型，`"professional"` 为专业型],
@@ -24,7 +24,7 @@
   ),
 ) <tab-template-config>
 
-`anonymous: true` 会清空作者姓名、导师和学科信息，把学号显示为七个方块，并清空 PDF 作者元数据。当前委员会页仍直接读取原始 `information.defense`，不会自动隐藏评阅人和答辩委员；制作匿名稿时还需手工将这 12 条记录的字段留空。标题、关键词、正文、图片、文件名、致谢、成果、博士评语、决议和参考文献自引也仍可能泄露身份。
+`anonymous: true` 会清空作者姓名、导师、学科、评阅人和答辩委员信息，把学号显示为七个方块，并清空 PDF 作者元数据。标题、关键词、正文、图片、文件名、致谢、成果、博士评语、决议和参考文献自引仍可能泄露身份，匿名稿提交前必须逐项检查。
 
 常见学位类型组合如下：
 
@@ -54,7 +54,6 @@
     table.hline(stroke: 1.2pt),
     table.header([字段],[解释]),
     table.hline(stroke: 0.5pt),
-    [`institution`], [学校中英文名称和学校代码],
     [`security`], [中英文密级],
     [`title`], [中英文论文题目],
     [`abstract`], [中英文摘要],
@@ -72,11 +71,11 @@
   ),
 )
 
-中英文内容应一一对应。英文姓名、题目和学科名称应使用学院认可的正式译法。`title.zh` 和 `title.en` 必须保留纯文本，其中 `title.zh` 还用于 PDF metadata。可选的 `display_en` 可以承载英文标题中的复杂公式；当前博士 A3 书脊会把 `display_zh` 交给只接受字符串的竖排函数，因此启用博士外封面时不要把 `display_zh` 设置为内容块。
+中英文内容应一一对应。英文姓名、题目和学科名称应使用学院认可的正式译法。`title.zh` 和 `title.en` 必须保留纯文本，其中 `title.zh` 还用于 PDF metadata 和博士 A3 书脊。可选的 `display_zh`、`display_en` 可以承载固定页面标题中的复杂公式等可排版内容。
 
 显示开关只控制页面是否渲染，不会让 `information` 字段变成可选项。始终保留 `examples/empty/settings.typ` 中的完整结构；普通列表无数据时使用空数组 `()`，固定表格记录则保留条目并将字段写成空字符串。
 
-`institution.name_zh` 和 `institution.name_en` 是保留字段，当前固定页面仍使用模板内置的学校名称；现阶段只有 `institution.school_code` 会进入封面信息。
+学校中英文名称和学校代码固定在东北师范大学模板内部，`information` 不提供 `institution` 字段。若学校官方信息发生变化，应修改模板并重新核对所有固定页面，而不是在单篇论文中覆盖。
 
 == 评阅人与委员会
 

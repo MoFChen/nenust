@@ -4,9 +4,16 @@
 
 模板会把表题放在表格上方，并已全局设置 `stroke: none` 关闭默认网格。三线表只需添加顶线、表头分隔线和底线；若脱离本模板单独使用示例，再显式补上 `stroke: none`：
 
+#let tablenote(mark, body) = par(
+ first-line-indent: 0em , hanging-indent: 0.5em, spacing: 0em, leading: 0em
+)[
+  #set text(size: 10.5pt)
+  #box(width: 0.5em)[#super(mark)]#body
+]
+
 #figure(
   table(
-    columns: 3,
+    columns: (1fr,1fr,1fr),
     table.hline(stroke: 1.2pt),
     table.header([方法], [样本数], [准确率]),
     table.hline(stroke: 0.5pt),
@@ -14,11 +21,8 @@
     [本文方法#super[b]], [120], [94.8%],
     table.hline(stroke: 1.2pt),
     table.cell(colspan: 3, align: left)[
-      #set text(size: 10.5pt)
-      #grid(align: left, columns: 2,
-        super[a], [基线方法指MLP],
-        super[b], [这是一个非常非常非常非常非常非常长的表格注释，导致表格被拓宽],
-      )
+      #tablenote([a])[基线方法指MLP]
+      #tablenote([b])[这是一个非常非常非常非常非常非常长的表格注释，导致表格被拉宽且最后一列的宽度过大，目前这个问题尚无解决办法。必须依赖手动换行或不要写过长的表格注释。或者使用`columns: (1fr, 1fr, 1fr)` 让表格占据100%的宽度，但对于列较少的表格没有那么美观。]
     ]
   ),
   caption: [带表注的简单表格示例],

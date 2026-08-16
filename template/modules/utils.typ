@@ -87,12 +87,12 @@
     header: (zh: "", en: ""),
     top_info: (
       zh: (
-        "学校代码：" + information.institution.school_code,
+        "学校代码：10200",
         "研究生学号：" + information.author.student_id,
         "密级：" + information.security.zh
       ),
       en: (
-        "School code: " + information.institution.school_code,
+        "School code: 10200",
         "Student ID: " + information.author.student_id,
         "Security level: " + information.security.en
       )
