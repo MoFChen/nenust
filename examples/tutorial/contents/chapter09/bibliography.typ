@@ -167,4 +167,4 @@
   ```
 )
 
-`nenu-bibliography-render` 在顺序编码制下使用左对齐的两列 `grid` 分隔序号与文献文本，并保留条目目标；只有 `show-backlinks: true` 时才显示回链。著者-出版年制继续使用段落布局。使用内置 GB/T 处理器时直接调用该函数即可；使用原生 CSL 时不能使用它提供的自定义 renderer，应改为直接调用底层 `render-bibliography()`。底层 API、CSL/CSL-M 路由和条目记录字段以 `template/modules/bibliography.typ` 与其子模块的当前导出为准。
+`nenu-bibliography-render` 在顺序编码制下自动测量最宽序号，以定宽编号框和悬挂缩进对齐文献文本；较长条目仍可跨页。只有 `show-backlinks: true` 时才显示回链。著者-出版年制继续使用普通段落布局。编号对齐和间距的内部定制见附录“参考文献编号布局”。使用内置 GB/T 处理器时直接调用该函数即可；使用原生 CSL 时不能使用它提供的自定义 renderer，应改为直接调用底层 `render-bibliography()`。底层 API、CSL/CSL-M 路由和条目记录字段以 `template/modules/bibliography.typ` 与其子模块的当前导出为准。

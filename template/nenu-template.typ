@@ -28,29 +28,22 @@
     full: full,
     renderer: entries => {
       set par(justify: true, first-line-indent: 0em, hanging-indent: 0em, leading: 0.25em, spacing: 0.5em)
-
       if entries.len() == 0 {
         none
       } else if entries.first().style == "numeric" {
-        grid(
-          columns: (auto, 1fr),
-          column-gutter: 0.5em,
-          row-gutter: 0.5em,
-          align: left,
-
-          ..for entry in entries {
-            (
-              text(
-                "[" + str(entry.order) + "]"
-              ),
-              entry.labeled-rendered,
-            )
-          },
-        )
+        /* 自动计算所有 [n] 中的最大宽度 */
+        let label-width = entries
+          .map(entry => measure([[#entry.order]]).width)
+          .fold(0pt, calc.max)
+        /* 悬挂缩进 = 最大编号宽度 + 间距 */
+        let indent = label-width + nenu-style.bibliography.gap
+        set par(hanging-indent: indent)
+        for entry in entries [
+          #box(width: label-width)[#align(nenu-style.bibliography.align)[[#entry.order]]]#h(nenu-style.bibliography.gap)#entry.labeled-rendered#parbreak()
+        ]
       } else {
         for entry in entries [
-          #entry.labeled-rendered
-          #parbreak()
+          #entry.labeled-rendered#parbreak()
         ]
       }
     }

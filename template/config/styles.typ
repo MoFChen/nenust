@@ -10,5 +10,9 @@
   color: (
     logo: (doctoral: "#A11F12", master: "#235F2F"),
     book_spine: (doctoral: "#CF000D", master: "#003E43"),
-  )
+  ),
+  bibliography: (
+    align: left,
+    gap: 0.5em,
+  ),
 )
