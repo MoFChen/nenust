@@ -215,6 +215,10 @@
   if form == "prose" { linked } else { super(linked) }
 }
 
+#let footcite(key, supplement: none) = footnote(
+  cite(label(str(key)), supplement: supplement, form: "full")
+)
+
 #let _normalize-multicite-args(args) = {
   let raw = args.pos()
   if raw.len() == 1 and type(raw.first()) == content {

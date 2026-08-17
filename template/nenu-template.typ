@@ -5,6 +5,7 @@
 #import "config/styles.typ": nenu-style
 
 #import "modules/bibliography.typ": (
+  footcite,
   get-cited-entries,
   init-bibliography,
   init-csl,

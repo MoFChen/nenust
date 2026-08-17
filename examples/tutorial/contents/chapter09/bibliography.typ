@@ -1,4 +1,4 @@
-#import "/template/nenu-template.typ": multicite
+#import "/template/nenu-template.typ": footcite, multicite
 
 = 文献引用与参考文献 <chapter-bibliography>
 
@@ -146,7 +146,22 @@
   ```
 )
 
-拆分出的章节拥有独立作用域；若章节直接调用 `multicite` 或 `nocite`，需要在该章节中导入对应名称。正文应始终使用引用键，不要手工输入 `[1]`，移动或增加引用后 Typst 会重新计算序号。
+拆分出的章节拥有独立作用域；若章节直接调用 `footcite`、`multicite` 或 `nocite`，需要在该章节中导入对应名称。正文应始终使用引用键，不要手工输入 `[1]`，移动或增加引用后 Typst 会重新计算序号。
+
+== 脚注文献引用 <sec-footcite>
+
+需要把单篇引文放在页底时，使用 `footcite` 创建文献脚注，不要再把它包进 `footnote`。正文只显示模板现有的脚注圈码；使用内置 GB/T 处理器时，脚注内容显示与参考文献列表一致的完整著录文本，并链接到参考文献中的对应条目。例如，脚注文献引用#footcite(<chenjianjun2010>)，带定位信息的写法见此处#footcite(<caoling2011>, supplement: [19])。
+
+#figure(
+  caption: [脚注文献引用],
+  kind: image,
+  ```typst
+  脚注文献引用#footcite(<chenjianjun2010>)。
+  带定位信息#footcite(<caoling2011>, supplement: [19])。
+  ```
+)
+
+`key` 可以使用 `<引用键>` 或引用键字符串，`supplement` 沿用普通引文的补充信息规则。`footcite` 当前只处理单篇文献，并会参与引用顺序和参考文献筛选。使用内置 GB/T 处理器时须在后文调用 `nenu-bibliography-render()` 生成链接目标；原生 CSL 的脚注引文由 CSL 样式决定，并须改用 `render-bibliography()` 输出文献表。不要在标题、图题或表题中使用文献脚注，这些内容可能在目录中再次排版，造成脚注和引文重复。
 
 == 参考文献、附录和后记
 
