@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>PDF 版本预览与对比</title>
+  <title>nenust PDF 预览与对比</title>
   <style>
     :root {
       color-scheme: light dark;
@@ -323,19 +323,6 @@
       height: 100%;
     }
 
-    .page-number {
-      position: absolute;
-      right: 8px;
-      bottom: 8px;
-      padding: 3px 7px;
-      border-radius: 999px;
-      background: rgba(0, 0, 0, 0.58);
-      color: white;
-      font-size: 11px;
-      line-height: 1.3;
-      pointer-events: none;
-    }
-
     .viewer-message {
       width: min(620px, 100%);
       margin: auto;
@@ -380,8 +367,8 @@
   <div class="app">
     <header class="topbar">
       <div class="brand">
-        <h1>PDF 版本预览与对比</h1>
-        <p>单份预览 · 文件下载 · 双栏同步对比</p>
+        <h1>nenust · PDF 预览与对比</h1>
+        <p>东北师范大学研究生学位论文 Typst 模板 · 示例输出</p>
       </div>
       <div class="toolbar" aria-label="预览模式">
         <button id="singleModeBtn" class="mode-btn active" type="button">单份预览</button>
@@ -391,11 +378,12 @@
 
     <main class="main">
       <aside class="sidebar">
-        <p class="sidebar-title">PDF 文件</p>
+        <p class="sidebar-title">示例 PDF</p>
         <div id="fileList" class="file-list"></div>
         <p class="note">
-          PDF 与本页面放在同一目录。新增、删除版本或修改中文名称时，只需修改源码中的
-          <code>PDF_VERSIONS</code> 配置。建议通过本地 HTTP 服务打开页面。
+          本页面用于预览 <strong>nenust</strong> 模板的示例输出。该模板为个人开发的非官方学术资源，
+          非学校授权或提供；示例仅用于展示排版效果与功能。正式提交前，请以学校及学院最新要求为准，
+          并与学校最新版官方 Word 模板逐项核对。
         </p>
       </aside>
 
@@ -412,7 +400,7 @@
                 <span>同步缩放</span>
               </label>
             </div>
-            <span class="sync-hint">滚动按页码与页内位置对齐；同步缩放开启时，任意一栏的缩放会自动应用到另一栏。</span>
+            <span class="sync-hint">同步滚动按页码与页内位置对齐；同步缩放会将任意一栏的缩放比例应用到另一栏。</span>
           </div>
 
           <div class="select-wrap">
@@ -471,15 +459,15 @@
   <script type="module">
     // ===== PDF 文件配置：file 是实际文件名，label 是界面显示的中文别名 =====
     const PDF_VERSIONS = [
-      { file: "anonymous-double.pdf", label: "匿名双盲版" },
-      { file: "author-date-full.pdf", label: "作者-日期制（完整版）" },
-      { file: "doctoral-academic-social.pdf", label: "博士学术型 · 社会科学" },
-      { file: "doctoral-professional-science.pdf", label: "博士专业型 · 理工科" },
-      { file: "master-academic-science.pdf", label: "硕士学术型 · 理工科" },
-      { file: "master-academic-social.pdf", label: "硕士学术型 · 社会科学" },
-      { file: "master-professional-social.pdf", label: "硕士专业型 · 社会科学" },
-      { file: "numeric-full.pdf", label: "顺序编码制（完整版）" },
-      { file: "tutorial.pdf", label: "使用教程" }
+      { file: "anonymous-double.pdf", label: "匿名稿 · 双面排版" },
+      { file: "author-date-full.pdf", label: "著者-出版年制 · 完整参考文献示例" },
+      { file: "doctoral-academic-social.pdf", label: "学术型博士 · 社科" },
+      { file: "doctoral-professional-science.pdf", label: "专业型博士 · 理工科" },
+      { file: "master-academic-science.pdf", label: "学术型硕士 · 理工科" },
+      { file: "master-academic-social.pdf", label: "学术型硕士 · 社科" },
+      { file: "master-professional-social.pdf", label: "专业型硕士 · 社科" },
+      { file: "numeric-full.pdf", label: "顺序编码制 · 完整参考文献示例" },
+      { file: "tutorial.pdf", label: "模板使用教程" }
     ];
 
     const PDF_FILES = PDF_VERSIONS.map((item) => item.file);
@@ -688,12 +676,8 @@
           pageWrap.style.height = `${item.cssViewport.height}px`;
 
           const canvas = document.createElement("canvas");
-          const badge = document.createElement("span");
-          badge.className = "page-number";
-          badge.textContent = `${item.pageNumber} / ${pdf.numPages}`;
 
           pageWrap.appendChild(canvas);
-          pageWrap.appendChild(badge);
           pagesRoot.appendChild(pageWrap);
         }
 
@@ -723,7 +707,7 @@
           : "";
         showMessage(
           side,
-          `PDF 预览加载失败。请确认文件名正确、PDF.js CDN 可访问。${localHint}<br><br>“新窗口”和“下载”仍可直接使用。`
+          `PDF 预览加载失败。请确认 PDF 文件与本页面位于同一目录，并检查 PDF.js CDN 是否可访问。${localHint}<br><br>“新窗口”和“下载”仍可直接使用。`
         );
       }
     }
