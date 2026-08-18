@@ -1,0 +1,242 @@
+name: Build PDFs and deploy Pages
+
+on:
+  push:
+    branches:
+      - master
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: github-pages
+  cancel-in-progress: true
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup Typst
+        uses: typst-community/setup-typst@v5
+
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v5
+
+      - name: Build PDF variants
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          rm -rf _site .build
+          mkdir -p _site .build
+
+          # index.html 与生成出的 PDF 会处于 Pages 根目录。
+          cp index.html _site/index.html
+          touch _site/.nojekyll
+
+          python3 <<'PY'
+          from __future__ import annotations
+
+          import re
+          import shutil
+          import subprocess
+          from pathlib import Path
+
+          ROOT = Path.cwd()
+          SOURCE = ROOT / "examples" / "tutorial"
+          BUILD_ROOT = ROOT / ".build"
+          SITE = ROOT / "_site"
+          FONT_DIR = ROOT / "template" / "assets" / "fonts"
+
+          # 文件名必须与 index.html 中 PDF_VERSIONS 的 file 字段一致。
+          variants = [
+              # 仓库教程默认配置：doctoral / academic / science，
+              # numeric，且完整输出参考文献。
+              {
+                  "file": "tutorial.pdf",
+              },
+
+              # 匿名 + 双面排版，用于展示 anonymous / double_sided。
+              {
+                  "file": "anonymous-double.pdf",
+                  "config": {
+                      "anonymous": True,
+                      "double_sided": True,
+                  },
+              },
+
+              # 学位类型 / 学科分组示例。
+              {
+                  "file": "doctoral-academic-social.pdf",
+                  "config": {
+                      "degree_level": "doctoral",
+                      "degree_type": "academic",
+                      "discipline_group": "social",
+                  },
+              },
+              {
+                  "file": "doctoral-professional-science.pdf",
+                  "config": {
+                      "degree_level": "doctoral",
+                      "degree_type": "professional",
+                      "discipline_group": "science",
+                  },
+              },
+              {
+                  "file": "master-academic-science.pdf",
+                  "config": {
+                      "degree_level": "master",
+                      "degree_type": "academic",
+                      "discipline_group": "science",
+                  },
+              },
+              {
+                  "file": "master-academic-social.pdf",
+                  "config": {
+                      "degree_level": "master",
+                      "degree_type": "academic",
+                      "discipline_group": "social",
+                  },
+              },
+              {
+                  "file": "master-professional-social.pdf",
+                  "config": {
+                      "degree_level": "master",
+                      "degree_type": "professional",
+                      "discipline_group": "social",
+                  },
+              },
+
+              # 参考文献样式对比；full=True 会输出 references.bib 中全部条目。
+              {
+                  "file": "numeric-full.pdf",
+                  "bibliography_style": "numeric",
+                  "bibliography_full": True,
+              },
+              {
+                  "file": "author-date-full.pdf",
+                  "bibliography_style": "author-date",
+                  "bibliography_full": True,
+              },
+          ]
+
+          def typst_value(value):
+              if isinstance(value, bool):
+                  return "true" if value else "false"
+              if isinstance(value, str):
+                  return f'"{value}"'
+              raise TypeError(f"Unsupported Typst value: {value!r}")
+
+          def replace_config(text: str, key: str, value) -> str:
+              pattern = rf'(?m)^(\s*{re.escape(key)}\s*:\s*)([^,\n]+)(,)'
+              replacement = rf'\g<1>{typst_value(value)}\g<3>'
+              new_text, count = re.subn(pattern, replacement, text, count=1)
+              if count != 1:
+                  raise RuntimeError(f"Cannot find config key: {key}")
+              return new_text
+
+          def replace_bibliography_style(text: str, style: str) -> str:
+              pattern = r'(?m)^(\s*style\s*:\s*)"(?:numeric|author-date)"(\s*,)'
+              new_text, count = re.subn(
+                  pattern,
+                  rf'\g<1>"{style}"\g<2>',
+                  text,
+                  count=1,
+              )
+              if count != 1:
+                  raise RuntimeError("Cannot find bibliography style in main.typ")
+              return new_text
+
+          def replace_bibliography_full(text: str, full: bool) -> str:
+              value = "true" if full else "false"
+              pattern = r'#nenu-bibliography-render\(\s*full\s*:\s*(?:true|false)\s*\)'
+              new_text, count = re.subn(
+                  pattern,
+                  f"#nenu-bibliography-render(full: {value})",
+                  text,
+                  count=1,
+              )
+              if count != 1:
+                  raise RuntimeError("Cannot find nenu-bibliography-render(full: ...)")
+              return new_text
+
+          for variant in variants:
+              name = variant["file"].removesuffix(".pdf")
+              work = BUILD_ROOT / name
+
+              if work.exists():
+                  shutil.rmtree(work)
+              shutil.copytree(SOURCE, work)
+
+              settings_path = work / "settings.typ"
+              main_path = work / "main.typ"
+
+              settings = settings_path.read_text(encoding="utf-8")
+              main = main_path.read_text(encoding="utf-8")
+
+              for key, value in variant.get("config", {}).items():
+                  settings = replace_config(settings, key, value)
+
+              if "bibliography_style" in variant:
+                  main = replace_bibliography_style(
+                      main, variant["bibliography_style"]
+                  )
+
+              if "bibliography_full" in variant:
+                  main = replace_bibliography_full(
+                      main, variant["bibliography_full"]
+                  )
+
+              settings_path.write_text(settings, encoding="utf-8")
+              main_path.write_text(main, encoding="utf-8")
+
+              output = SITE / variant["file"]
+              print(f"==> Building {output.name}")
+
+              subprocess.run(
+                  [
+                      "typst",
+                      "compile",
+                      "--root",
+                      str(ROOT),
+                      "--font-path",
+                      str(FONT_DIR),
+                      str(main_path),
+                      str(output),
+                  ],
+                  check=True,
+              )
+
+          expected = {item["file"] for item in variants}
+          actual = {p.name for p in SITE.glob("*.pdf")}
+
+          if expected != actual:
+              missing = sorted(expected - actual)
+              extra = sorted(actual - expected)
+              raise RuntimeError(
+                  f"PDF output mismatch; missing={missing}, extra={extra}"
+              )
+
+          print("\nBuilt PDFs:")
+          for pdf in sorted(SITE.glob("*.pdf")):
+              print(f"  {pdf.name}: {pdf.stat().st_size / 1024 / 1024:.2f} MiB")
+          PY
+
+      - name: Upload GitHub Pages artifact
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: _site
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

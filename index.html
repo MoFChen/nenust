@@ -1,0 +1,893 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>PDF 版本预览与对比</title>
+  <style>
+    :root {
+      color-scheme: light dark;
+      --bg: #f4f6f8;
+      --panel: #ffffff;
+      --text: #1f2937;
+      --muted: #6b7280;
+      --border: #d9dee7;
+      --accent: #2563eb;
+      --soft: #eef4ff;
+      --shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #0f172a;
+        --panel: #111827;
+        --text: #e5e7eb;
+        --muted: #9ca3af;
+        --border: #334155;
+        --soft: #172554;
+        --shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+      }
+    }
+
+    * { box-sizing: border-box; }
+    html, body { width: 100%; height: 100%; }
+
+    body {
+      margin: 0;
+      overflow: hidden;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+        "Hiragino Sans GB", "Microsoft YaHei", Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+
+    button, select, a, input { font: inherit; }
+
+    .app {
+      width: 100%;
+      height: 100vh;
+      height: 100dvh;
+      display: grid;
+      grid-template-rows: auto minmax(0, 1fr);
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 14px 18px;
+      background: var(--panel);
+      border-bottom: 1px solid var(--border);
+      box-shadow: var(--shadow);
+      z-index: 2;
+    }
+
+    .brand h1 { margin: 0; font-size: 18px; }
+    .brand p { margin: 4px 0 0; color: var(--muted); font-size: 13px; }
+
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 8px;
+    }
+
+    .mode-btn,
+    .action-btn {
+      appearance: none;
+      border: 1px solid var(--border);
+      background: var(--panel);
+      color: var(--text);
+      border-radius: 9px;
+      padding: 8px 12px;
+      cursor: pointer;
+      text-decoration: none;
+      transition: 0.15s ease;
+    }
+
+    .mode-btn:hover,
+    .action-btn:hover { border-color: var(--accent); }
+
+    .mode-btn.active {
+      background: var(--accent);
+      color: white;
+      border-color: var(--accent);
+    }
+
+    .main {
+      min-width: 0;
+      min-height: 0;
+      overflow: hidden;
+      display: grid;
+      grid-template-columns: 250px minmax(0, 1fr);
+      gap: 14px;
+      padding: 14px;
+    }
+
+    .sidebar {
+      min-height: 0;
+      overflow: auto;
+      padding: 12px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: var(--panel);
+    }
+
+    .sidebar-title { margin: 0 0 10px; font-size: 14px; color: var(--muted); }
+    .file-list { display: grid; gap: 8px; }
+
+    .file-btn {
+      appearance: none;
+      width: 100%;
+      border: 1px solid var(--border);
+      border-radius: 9px;
+      padding: 10px 11px;
+      background: transparent;
+      color: var(--text);
+      text-align: left;
+      cursor: pointer;
+      overflow-wrap: anywhere;
+    }
+
+    .file-btn:hover { border-color: var(--accent); }
+    .file-btn.active { background: var(--soft); border-color: var(--accent); }
+
+    .viewer-area {
+      min-width: 0;
+      min-height: 0;
+      overflow: hidden;
+      display: grid;
+      grid-template-rows: minmax(0, 1fr);
+      gap: 10px;
+    }
+
+    .viewer-area.comparing {
+      grid-template-rows: auto minmax(0, 1fr);
+    }
+
+    .compare-controls {
+      display: none;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      gap: 10px;
+    }
+
+    .compare-controls.show { display: grid; }
+
+    .sync-wrap {
+      grid-column: 1 / -1;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 8px 11px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: var(--panel);
+    }
+
+    .sync-option {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+      user-select: none;
+      font-size: 13px;
+    }
+
+    .sync-option input {
+      width: 17px;
+      height: 17px;
+      accent-color: var(--accent);
+      cursor: pointer;
+    }
+
+    .sync-hint { color: var(--muted); font-size: 12px; }
+
+    .select-wrap {
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 8px;
+      padding: 9px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: var(--panel);
+    }
+
+    .select-wrap label { color: var(--muted); font-size: 13px; white-space: nowrap; }
+
+    select {
+      min-width: 0;
+      width: 100%;
+      padding: 7px 8px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--panel);
+      color: var(--text);
+    }
+
+    .viewer-grid {
+      min-width: 0;
+      min-height: 0;
+      height: 100%;
+      overflow: hidden;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr);
+      gap: 10px;
+    }
+
+    .viewer-grid.compare { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+
+    .pdf-pane {
+      min-width: 0;
+      min-height: 0;
+      height: 100%;
+      display: grid;
+      grid-template-rows: auto minmax(0, 1fr);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      background: var(--panel);
+    }
+
+    .pdf-pane.hidden { display: none; }
+
+    .pane-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      padding: 9px 11px;
+      border-bottom: 1px solid var(--border);
+      font-size: 13px;
+    }
+
+    .pane-name {
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .pane-actions {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      flex: 0 0 auto;
+    }
+    .pane-actions a { color: var(--accent); text-decoration: none; }
+
+    .zoom-controls {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding-right: 2px;
+    }
+
+    .zoom-btn {
+      appearance: none;
+      width: 28px;
+      height: 28px;
+      padding: 0;
+      border: 1px solid var(--border);
+      border-radius: 7px;
+      background: var(--panel);
+      color: var(--text);
+      cursor: pointer;
+      line-height: 1;
+      font-size: 17px;
+    }
+
+    .zoom-btn:hover:not(:disabled) { border-color: var(--accent); }
+    .zoom-btn:disabled { opacity: 0.42; cursor: not-allowed; }
+
+    .zoom-value {
+      min-width: 48px;
+      text-align: center;
+      color: var(--muted);
+      font-size: 12px;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .pdf-scroll {
+      min-width: 0;
+      min-height: 0;
+      height: 100%;
+      overflow: auto;
+      overscroll-behavior: contain;
+      scrollbar-gutter: stable;
+      background: #707070;
+    }
+
+    .pdf-pages {
+      min-height: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 14px;
+      padding: 16px;
+    }
+
+    .pdf-page {
+      position: relative;
+      flex: 0 0 auto;
+      background: #fff;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.26);
+    }
+
+    .pdf-page canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+
+    .page-number {
+      position: absolute;
+      right: 8px;
+      bottom: 8px;
+      padding: 3px 7px;
+      border-radius: 999px;
+      background: rgba(0, 0, 0, 0.58);
+      color: white;
+      font-size: 11px;
+      line-height: 1.3;
+      pointer-events: none;
+    }
+
+    .viewer-message {
+      width: min(620px, 100%);
+      margin: auto;
+      padding: 28px;
+      color: #f3f4f6;
+      text-align: center;
+      line-height: 1.7;
+    }
+
+    .viewer-message strong { color: white; }
+
+    .empty {
+      padding: 24px;
+      text-align: center;
+      color: var(--muted);
+      border: 1px dashed var(--border);
+      border-radius: 12px;
+      background: var(--panel);
+    }
+
+    .note { margin-top: 12px; color: var(--muted); font-size: 12px; line-height: 1.6; }
+
+    @media (max-width: 860px) {
+      body { overflow: auto; }
+      .app { height: auto; min-height: 100dvh; }
+      .topbar { align-items: flex-start; flex-direction: column; }
+      .toolbar { justify-content: flex-start; }
+      .main { overflow: visible; grid-template-columns: 1fr; }
+      .sidebar { max-height: 180px; }
+      .viewer-area,
+      .viewer-area.comparing { overflow: visible; grid-template-rows: auto; }
+      .compare-controls,
+      .compare-controls.show { grid-template-columns: 1fr; }
+      .sync-wrap { grid-column: auto; align-items: flex-start; flex-direction: column; gap: 4px; }
+      .viewer-grid,
+      .viewer-grid.compare { height: auto; overflow: visible; grid-template-columns: 1fr; }
+      .pdf-pane { height: 72vh; min-height: 520px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <div class="brand">
+        <h1>PDF 版本预览与对比</h1>
+        <p>单份预览 · 文件下载 · 双栏同步对比</p>
+      </div>
+      <div class="toolbar" aria-label="预览模式">
+        <button id="singleModeBtn" class="mode-btn active" type="button">单份预览</button>
+        <button id="compareModeBtn" class="mode-btn" type="button">双栏对比</button>
+      </div>
+    </header>
+
+    <main class="main">
+      <aside class="sidebar">
+        <p class="sidebar-title">PDF 文件</p>
+        <div id="fileList" class="file-list"></div>
+        <p class="note">
+          PDF 与本页面放在同一目录。新增、删除版本或修改中文名称时，只需修改源码中的
+          <code>PDF_VERSIONS</code> 配置。建议通过本地 HTTP 服务打开页面。
+        </p>
+      </aside>
+
+      <section id="viewerArea" class="viewer-area">
+        <div id="compareControls" class="compare-controls">
+          <div class="sync-wrap">
+            <div style="display:flex;align-items:center;gap:18px;flex-wrap:wrap;">
+              <label class="sync-option" for="syncScroll">
+                <input id="syncScroll" type="checkbox" checked />
+                <span>同步滚动</span>
+              </label>
+              <label class="sync-option" for="syncZoom">
+                <input id="syncZoom" type="checkbox" checked />
+                <span>同步缩放</span>
+              </label>
+            </div>
+            <span class="sync-hint">滚动按页码与页内位置对齐；同步缩放开启时，任意一栏的缩放会自动应用到另一栏。</span>
+          </div>
+
+          <div class="select-wrap">
+            <label for="leftSelect">左栏</label>
+            <select id="leftSelect"></select>
+            <a id="leftDownloadTop" class="action-btn" href="#" download>下载</a>
+          </div>
+          <div class="select-wrap">
+            <label for="rightSelect">右栏</label>
+            <select id="rightSelect"></select>
+            <a id="rightDownloadTop" class="action-btn" href="#" download>下载</a>
+          </div>
+        </div>
+
+        <div id="viewerGrid" class="viewer-grid">
+          <article id="leftPane" class="pdf-pane">
+            <div class="pane-head">
+              <span id="leftName" class="pane-name"></span>
+              <span class="pane-actions">
+                <span class="zoom-controls" aria-label="左栏缩放">
+                  <button id="leftZoomOut" class="zoom-btn" type="button" title="缩小">−</button>
+                  <span id="leftZoomValue" class="zoom-value">100%</span>
+                  <button id="leftZoomIn" class="zoom-btn" type="button" title="放大">+</button>
+                </span>
+                <a id="leftOpen" href="#" target="_blank" rel="noopener">新窗口</a>
+                <a id="leftDownload" href="#" download>下载</a>
+              </span>
+            </div>
+            <div id="leftScroll" class="pdf-scroll" aria-label="左侧 PDF 预览">
+              <div id="leftPages" class="pdf-pages"></div>
+            </div>
+          </article>
+
+          <article id="rightPane" class="pdf-pane hidden">
+            <div class="pane-head">
+              <span id="rightName" class="pane-name"></span>
+              <span class="pane-actions">
+                <span class="zoom-controls" aria-label="右栏缩放">
+                  <button id="rightZoomOut" class="zoom-btn" type="button" title="缩小">−</button>
+                  <span id="rightZoomValue" class="zoom-value">100%</span>
+                  <button id="rightZoomIn" class="zoom-btn" type="button" title="放大">+</button>
+                </span>
+                <a id="rightOpen" href="#" target="_blank" rel="noopener">新窗口</a>
+                <a id="rightDownload" href="#" download>下载</a>
+              </span>
+            </div>
+            <div id="rightScroll" class="pdf-scroll" aria-label="右侧 PDF 预览">
+              <div id="rightPages" class="pdf-pages"></div>
+            </div>
+          </article>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script type="module">
+    // ===== PDF 文件配置：file 是实际文件名，label 是界面显示的中文别名 =====
+    const PDF_VERSIONS = [
+      { file: "anonymous-double.pdf", label: "匿名双盲版" },
+      { file: "author-date-full.pdf", label: "作者-日期制（完整版）" },
+      { file: "doctoral-academic-social.pdf", label: "博士学术型 · 社会科学" },
+      { file: "doctoral-professional-science.pdf", label: "博士专业型 · 理工科" },
+      { file: "master-academic-science.pdf", label: "硕士学术型 · 理工科" },
+      { file: "master-academic-social.pdf", label: "硕士学术型 · 社会科学" },
+      { file: "master-professional-social.pdf", label: "硕士专业型 · 社会科学" },
+      { file: "numeric-full.pdf", label: "顺序编码制（完整版）" },
+      { file: "tutorial.pdf", label: "使用教程" }
+    ];
+
+    const PDF_FILES = PDF_VERSIONS.map((item) => item.file);
+    const PDF_LABELS = new Map(PDF_VERSIONS.map((item) => [item.file, item.label]));
+    // ======================================================================
+
+    // 为了实现可靠的双栏同步滚动，预览改由 PDF.js 渲染。
+    // 如需完全离线，可把下面两个地址改成本地 pdf.min.mjs / pdf.worker.min.mjs。
+    const PDFJS_URL = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.min.mjs";
+    const PDFJS_WORKER_URL = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.worker.min.mjs";
+
+    const state = {
+      mode: "single",
+      left: PDF_FILES[0] || "",
+      right: PDF_FILES[1] || PDF_FILES[0] || "",
+      syncScroll: true,
+      syncZoom: true,
+      zoom: { left: 1, right: 1 }
+    };
+
+    const el = {
+      singleModeBtn: document.getElementById("singleModeBtn"),
+      compareModeBtn: document.getElementById("compareModeBtn"),
+      compareControls: document.getElementById("compareControls"),
+      viewerArea: document.getElementById("viewerArea"),
+      viewerGrid: document.getElementById("viewerGrid"),
+      rightPane: document.getElementById("rightPane"),
+      fileList: document.getElementById("fileList"),
+      leftSelect: document.getElementById("leftSelect"),
+      rightSelect: document.getElementById("rightSelect"),
+      syncScroll: document.getElementById("syncScroll"),
+      syncZoom: document.getElementById("syncZoom"),
+      leftName: document.getElementById("leftName"),
+      rightName: document.getElementById("rightName"),
+      leftScroll: document.getElementById("leftScroll"),
+      rightScroll: document.getElementById("rightScroll"),
+      leftPages: document.getElementById("leftPages"),
+      rightPages: document.getElementById("rightPages"),
+      leftOpen: document.getElementById("leftOpen"),
+      rightOpen: document.getElementById("rightOpen"),
+      leftDownload: document.getElementById("leftDownload"),
+      rightDownload: document.getElementById("rightDownload"),
+      leftDownloadTop: document.getElementById("leftDownloadTop"),
+      rightDownloadTop: document.getElementById("rightDownloadTop"),
+      leftZoomOut: document.getElementById("leftZoomOut"),
+      leftZoomIn: document.getElementById("leftZoomIn"),
+      leftZoomValue: document.getElementById("leftZoomValue"),
+      rightZoomOut: document.getElementById("rightZoomOut"),
+      rightZoomIn: document.getElementById("rightZoomIn"),
+      rightZoomValue: document.getElementById("rightZoomValue")
+    };
+
+    let pdfjsLib = null;
+    let pdfjsLoadError = null;
+    const documentCache = new Map();
+    const renderTokens = { left: 0, right: 0 };
+    const renderedFiles = { left: null, right: null };
+    const renderedWidths = { left: 0, right: 0 };
+    const suppressScrollUntil = new WeakMap();
+    let resizeTimer = null;
+    const ZOOM_LEVELS = [0.5, 0.67, 0.75, 0.8, 0.9, 1, 1.1, 1.25, 1.5, 1.75, 2, 2.5, 3];
+
+    function labelFor(file) {
+      return PDF_LABELS.get(file) || "未命名版本";
+    }
+
+    function fileUrl(file) {
+      return encodeURI(file);
+    }
+
+    async function ensurePdfJs() {
+      if (pdfjsLib) return pdfjsLib;
+      if (pdfjsLoadError) throw pdfjsLoadError;
+
+      try {
+        pdfjsLib = await import(PDFJS_URL);
+        pdfjsLib.GlobalWorkerOptions.workerSrc = PDFJS_WORKER_URL;
+        return pdfjsLib;
+      } catch (error) {
+        pdfjsLoadError = error;
+        throw error;
+      }
+    }
+
+    function fillSelect(select, selected) {
+      select.innerHTML = "";
+      PDF_FILES.forEach((file) => {
+        const option = document.createElement("option");
+        option.value = file;
+        option.textContent = labelFor(file);
+        option.selected = file === selected;
+        select.appendChild(option);
+      });
+    }
+
+    function renderFileList() {
+      el.fileList.innerHTML = "";
+
+      if (!PDF_FILES.length) {
+        const empty = document.createElement("div");
+        empty.className = "empty";
+        empty.textContent = "请先在 PDF_VERSIONS 中添加 PDF 文件。";
+        el.fileList.appendChild(empty);
+        return;
+      }
+
+      PDF_FILES.forEach((file) => {
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "file-btn" + (state.left === file ? " active" : "");
+        btn.textContent = labelFor(file);
+        btn.title = `预览：${labelFor(file)}`;
+        btn.addEventListener("click", () => {
+          state.left = file;
+          el.leftSelect.value = file;
+          renderFileList();
+          updatePane("left", state.left, true);
+        });
+        el.fileList.appendChild(btn);
+      });
+    }
+
+    function showMessage(side, html) {
+      const pages = el[`${side}Pages`];
+      pages.innerHTML = `<div class="viewer-message">${html}</div>`;
+    }
+
+    async function getPdfDocument(file) {
+      if (documentCache.has(file)) return documentCache.get(file);
+      const lib = await ensurePdfJs();
+      const promise = lib.getDocument(fileUrl(file)).promise;
+      documentCache.set(file, promise);
+      try {
+        return await promise;
+      } catch (error) {
+        documentCache.delete(file);
+        throw error;
+      }
+    }
+
+    function getScrollAnchor(scroll) {
+      const pages = [...scroll.querySelectorAll(".pdf-page")];
+      if (!pages.length) return { pageIndex: 0, ratio: 0 };
+
+      const top = scroll.scrollTop + 2;
+      let current = pages[0];
+      let pageIndex = 0;
+
+      for (let i = 0; i < pages.length; i += 1) {
+        if (pages[i].offsetTop <= top) {
+          current = pages[i];
+          pageIndex = i;
+        } else {
+          break;
+        }
+      }
+
+      const ratio = Math.max(0, Math.min(1, (top - current.offsetTop) / Math.max(1, current.offsetHeight)));
+      return { pageIndex, ratio };
+    }
+
+    function restoreScrollAnchor(scroll, anchor) {
+      const pages = [...scroll.querySelectorAll(".pdf-page")];
+      if (!pages.length) return;
+      const page = pages[Math.min(anchor.pageIndex, pages.length - 1)];
+      scroll.scrollTop = page.offsetTop + anchor.ratio * page.offsetHeight;
+    }
+
+    async function renderPdf(side, file, preservePosition = false) {
+      const scroll = el[`${side}Scroll`];
+      const pagesRoot = el[`${side}Pages`];
+      const token = ++renderTokens[side];
+      const oldAnchor = preservePosition ? getScrollAnchor(scroll) : { pageIndex: 0, ratio: 0 };
+
+      if (!file) {
+        renderedFiles[side] = null;
+        showMessage(side, "未选择 PDF");
+        return;
+      }
+
+      showMessage(side, "正在载入 PDF…");
+
+      try {
+        const pdf = await getPdfDocument(file);
+        if (token !== renderTokens[side]) return;
+
+        const availableWidth = Math.max(240, scroll.clientWidth - 34);
+        const pageData = [];
+
+        for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber += 1) {
+          const page = await pdf.getPage(pageNumber);
+          if (token !== renderTokens[side]) return;
+          const baseViewport = page.getViewport({ scale: 1 });
+          const cssScale = (availableWidth / baseViewport.width) * state.zoom[side];
+          const cssViewport = page.getViewport({ scale: cssScale });
+          pageData.push({ page, pageNumber, cssScale, cssViewport });
+        }
+
+        pagesRoot.innerHTML = "";
+
+        for (const item of pageData) {
+          const pageWrap = document.createElement("div");
+          pageWrap.className = "pdf-page";
+          pageWrap.dataset.page = String(item.pageNumber);
+          pageWrap.style.width = `${item.cssViewport.width}px`;
+          pageWrap.style.height = `${item.cssViewport.height}px`;
+
+          const canvas = document.createElement("canvas");
+          const badge = document.createElement("span");
+          badge.className = "page-number";
+          badge.textContent = `${item.pageNumber} / ${pdf.numPages}`;
+
+          pageWrap.appendChild(canvas);
+          pageWrap.appendChild(badge);
+          pagesRoot.appendChild(pageWrap);
+        }
+
+        restoreScrollAnchor(scroll, oldAnchor);
+        renderedFiles[side] = file;
+        renderedWidths[side] = scroll.clientWidth;
+
+        const dpr = Math.min(window.devicePixelRatio || 1, 2);
+        const pageWraps = [...pagesRoot.querySelectorAll(".pdf-page")];
+
+        for (let i = 0; i < pageData.length; i += 1) {
+          if (token !== renderTokens[side]) return;
+          const item = pageData[i];
+          const canvas = pageWraps[i].querySelector("canvas");
+          const renderViewport = item.page.getViewport({ scale: item.cssScale * dpr });
+          canvas.width = Math.max(1, Math.floor(renderViewport.width));
+          canvas.height = Math.max(1, Math.floor(renderViewport.height));
+          canvas.style.width = `${item.cssViewport.width}px`;
+          canvas.style.height = `${item.cssViewport.height}px`;
+          const context = canvas.getContext("2d", { alpha: false });
+          await item.page.render({ canvasContext: context, viewport: renderViewport }).promise;
+        }
+      } catch (error) {
+        console.error(error);
+        const localHint = location.protocol === "file:"
+          ? "<br><br>当前是直接打开本地文件。请在该目录运行 <strong>python -m http.server 8000</strong>，再访问 <strong>http://localhost:8000/</strong>。"
+          : "";
+        showMessage(
+          side,
+          `PDF 预览加载失败。请确认文件名正确、PDF.js CDN 可访问。${localHint}<br><br>“新窗口”和“下载”仍可直接使用。`
+        );
+      }
+    }
+
+    function updatePane(side, file, forceRender = false) {
+      const url = fileUrl(file);
+      const name = el[`${side}Name`];
+      const open = el[`${side}Open`];
+      const download = el[`${side}Download`];
+      const downloadTop = el[`${side}DownloadTop`];
+
+      name.textContent = file ? labelFor(file) : "未选择 PDF";
+      name.title = file ? labelFor(file) : "";
+      open.href = file ? url : "#";
+      download.href = file ? url : "#";
+      download.download = file || "";
+      downloadTop.href = file ? url : "#";
+      downloadTop.download = file || "";
+
+      const widthChanged = Math.abs(el[`${side}Scroll`].clientWidth - renderedWidths[side]) > 8;
+      if (forceRender || renderedFiles[side] !== file || widthChanged) {
+        renderPdf(side, file, renderedFiles[side] === file);
+      }
+    }
+
+    function updateZoomUi(side) {
+      const zoom = state.zoom[side];
+      el[`${side}ZoomValue`].textContent = `${Math.round(zoom * 100)}%`;
+      el[`${side}ZoomOut`].disabled = zoom <= ZOOM_LEVELS[0];
+      el[`${side}ZoomIn`].disabled = zoom >= ZOOM_LEVELS[ZOOM_LEVELS.length - 1];
+    }
+
+    function nearestZoomIndex(value) {
+      let best = 0;
+      let bestDiff = Infinity;
+      ZOOM_LEVELS.forEach((level, index) => {
+        const diff = Math.abs(level - value);
+        if (diff < bestDiff) {
+          best = index;
+          bestDiff = diff;
+        }
+      });
+      return best;
+    }
+
+    function setZoom(side, nextZoom, syncPeer = true) {
+      const min = ZOOM_LEVELS[0];
+      const max = ZOOM_LEVELS[ZOOM_LEVELS.length - 1];
+      nextZoom = Math.max(min, Math.min(max, nextZoom));
+      if (Math.abs(state.zoom[side] - nextZoom) < 0.001) return;
+
+      state.zoom[side] = nextZoom;
+      updateZoomUi(side);
+      renderPdf(side, state[side], true);
+
+      if (syncPeer && state.mode === "compare" && state.syncZoom) {
+        const other = side === "left" ? "right" : "left";
+        state.zoom[other] = nextZoom;
+        updateZoomUi(other);
+        renderPdf(other, state[other], true);
+      }
+    }
+
+    function stepZoom(side, direction) {
+      const index = nearestZoomIndex(state.zoom[side]);
+      const nextIndex = Math.max(0, Math.min(ZOOM_LEVELS.length - 1, index + direction));
+      setZoom(side, ZOOM_LEVELS[nextIndex]);
+    }
+
+    function renderMode() {
+      const comparing = state.mode === "compare";
+      if (comparing && state.syncZoom && state.zoom.right !== state.zoom.left) {
+        state.zoom.right = state.zoom.left;
+        updateZoomUi("right");
+      }
+      el.singleModeBtn.classList.toggle("active", !comparing);
+      el.compareModeBtn.classList.toggle("active", comparing);
+      el.compareControls.classList.toggle("show", comparing);
+      el.viewerArea.classList.toggle("comparing", comparing);
+      el.viewerGrid.classList.toggle("compare", comparing);
+      el.rightPane.classList.toggle("hidden", !comparing);
+
+      requestAnimationFrame(() => {
+        updatePane("left", state.left);
+        if (comparing) updatePane("right", state.right);
+      });
+    }
+
+    function syncFrom(source, target) {
+      if (!state.syncScroll || state.mode !== "compare") return;
+      if (performance.now() < (suppressScrollUntil.get(source) || 0)) return;
+
+      const sourcePages = [...source.querySelectorAll(".pdf-page")];
+      const targetPages = [...target.querySelectorAll(".pdf-page")];
+      if (!sourcePages.length || !targetPages.length) return;
+
+      const anchor = getScrollAnchor(source);
+      const targetPage = targetPages[Math.min(anchor.pageIndex, targetPages.length - 1)];
+      const nextTop = targetPage.offsetTop + anchor.ratio * targetPage.offsetHeight;
+
+      suppressScrollUntil.set(target, performance.now() + 80);
+      target.scrollTop = nextTop;
+    }
+
+    function handleResize() {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(() => {
+        updatePane("left", state.left);
+        if (state.mode === "compare") updatePane("right", state.right);
+      }, 180);
+    }
+
+    el.singleModeBtn.addEventListener("click", () => {
+      state.mode = "single";
+      renderMode();
+    });
+
+    el.compareModeBtn.addEventListener("click", () => {
+      state.mode = "compare";
+      renderMode();
+    });
+
+    el.leftSelect.addEventListener("change", (event) => {
+      state.left = event.target.value;
+      renderFileList();
+      updatePane("left", state.left, true);
+    });
+
+    el.rightSelect.addEventListener("change", (event) => {
+      state.right = event.target.value;
+      updatePane("right", state.right, true);
+    });
+
+    el.syncScroll.addEventListener("change", (event) => {
+      state.syncScroll = event.target.checked;
+      if (state.syncScroll && state.mode === "compare") {
+        syncFrom(el.leftScroll, el.rightScroll);
+      }
+    });
+
+    el.syncZoom.addEventListener("change", (event) => {
+      state.syncZoom = event.target.checked;
+      if (state.syncZoom && state.mode === "compare" && state.zoom.right !== state.zoom.left) {
+        state.zoom.right = state.zoom.left;
+        updateZoomUi("right");
+        renderPdf("right", state.right, true);
+      }
+    });
+
+    el.leftZoomOut.addEventListener("click", () => stepZoom("left", -1));
+    el.leftZoomIn.addEventListener("click", () => stepZoom("left", 1));
+    el.rightZoomOut.addEventListener("click", () => stepZoom("right", -1));
+    el.rightZoomIn.addEventListener("click", () => stepZoom("right", 1));
+
+    el.leftScroll.addEventListener("scroll", () => syncFrom(el.leftScroll, el.rightScroll), { passive: true });
+    el.rightScroll.addEventListener("scroll", () => syncFrom(el.rightScroll, el.leftScroll), { passive: true });
+    window.addEventListener("resize", handleResize);
+
+    fillSelect(el.leftSelect, state.left);
+    fillSelect(el.rightSelect, state.right);
+    updateZoomUi("left");
+    updateZoomUi("right");
+    renderFileList();
+    renderMode();
+  </script>
+</body>
+</html>
