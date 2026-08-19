@@ -1,0 +1,153 @@
+name: Publish Latest Template
+
+on:
+  push:
+    branches:
+      - master
+    paths:
+      - "template/**"
+
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: publish-latest
+  cancel-in-progress: true
+
+jobs:
+  release:
+    name: Build and publish latest
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Build release archives
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          rm -rf build dist
+
+          mkdir -p \
+            build/with-fonts \
+            build/no-fonts \
+            build/fonts \
+            dist
+
+          # ------------------------------------------------------------
+          # 1. 带字体的完整模板
+          # ------------------------------------------------------------
+          cp -a template build/with-fonts/nenust-template
+
+          # ------------------------------------------------------------
+          # 2. 不带字体的模板
+          # ------------------------------------------------------------
+          cp -a template build/no-fonts/nenust-template
+
+          rm -rf build/no-fonts/nenust-template/assets/fonts
+
+          # 保留空的 fonts 目录，方便用户后续自行放入字体
+          mkdir -p build/no-fonts/nenust-template/assets/fonts
+
+          # ------------------------------------------------------------
+          # 3. 单独字体包
+          # ------------------------------------------------------------
+          cp -a template/assets/fonts build/fonts/fonts
+
+          # ------------------------------------------------------------
+          # 打包
+          # ------------------------------------------------------------
+
+          (
+            cd build/with-fonts
+            zip -qr ../../dist/nenust-template-with-fonts.zip nenust-template
+          )
+
+          (
+            cd build/no-fonts
+            zip -qr ../../dist/nenust-template-no-fonts.zip nenust-template
+          )
+
+          (
+            cd build/fonts
+            zip -qr ../../dist/nenust-fonts.zip fonts
+          )
+
+          echo "Release assets:"
+          ls -lh dist/
+
+      - name: Update latest tag
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          # latest 永远指向当前 master 最新提交
+          git tag -f latest "$GITHUB_SHA"
+          git push origin refs/tags/latest --force
+
+      - name: Create or update latest release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+
+          cat > release-notes.md <<EOF
+          # NENU Typst Template
+
+          此 Release 始终对应仓库最新模板。
+
+          当前构建 Commit：
+
+          \`${GITHUB_SHA}\`
+
+          ## 下载
+
+          - **nenust-template-with-fonts.zip**
+            完整模板，包含字体。
+
+          - **nenust-template-no-fonts.zip**
+            模板本体，不包含字体文件。
+
+          - **nenust-fonts.zip**
+            模板所需字体的独立字体包。
+
+          EOF
+
+          # Release 已存在：更新同一个 latest Release
+          if gh release view latest >/dev/null 2>&1; then
+            echo "Updating existing latest release..."
+
+            gh release edit latest \
+              --title "Latest" \
+              --notes-file release-notes.md \
+              --draft=false \
+              --prerelease=false \
+              --latest
+
+          # Release 不存在：第一次创建
+          else
+            echo "Creating latest release..."
+
+            gh release create latest \
+              --verify-tag \
+              --title "Latest" \
+              --notes-file release-notes.md \
+              --latest
+          fi
+
+          # 覆盖同名 Release assets
+          gh release upload latest \
+            dist/nenust-template-with-fonts.zip \
+            dist/nenust-template-no-fonts.zip \
+            dist/nenust-fonts.zip \
+            --clobber
