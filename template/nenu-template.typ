@@ -212,6 +212,8 @@
   show figure.caption: set text(size: 10.5pt)
   /* 设置正文表格 */
   set table(align: horizon + center, column-gutter: 1em, row-gutter: 0em, stroke: none)
+  /* 设置表格行距 */
+  show figure.where(kind: table): set par(leading: 0.5em)
   /* 设置数学公式 */
   set math.equation(numbering: equation-numbering, supplement: [公式])
   /* 设置脚注 */
