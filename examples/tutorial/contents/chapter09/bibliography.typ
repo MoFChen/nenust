@@ -109,7 +109,11 @@
     read("references.bib"),
     style: "numeric",
     show-url: false,
-    show-online: false,
+    show-identifiers: false,
+    show-doi: false,
+    show-cstr: false,
+    show-urn: false,
+    show-pid: false,
     show-doi: false,
     show-accessed: false,
     show-backlinks: false,
@@ -118,7 +122,7 @@
   ```
 )
 
-两个 `show` 规则依次处理同一份文档，因此模板生成的摘要和用户正文共享引用顺序。`style` 也可设为 `"author-date"`。五个显示开关均默认为 `true`；教程入口显式关闭它们以缩短完整文献列表。`show-online: false` 只隐藏类型标识中的 `/OL`，`show-doi: false` 隐藏单独著录的 DOI、CSTR、URN 和 PID 等永久标识符，`show-backlinks: false` 只关闭文献表后的返回箭头。若永久标识符同时保存在 `url` 字段中，还需通过 `show-url` 决定该 URL 是否显示。
+两个 `show` 规则依次处理同一份文档，因此模板生成的摘要和用户正文共享引用顺序。`style` 也可设为 `"author-date"`。五个显示开关均默认为 `true`；教程入口显式关闭它们以缩短完整文献列表。`show-online: false` 只隐藏类型标识中的 `/OL`，`show-identifiers: false` 隐藏单独著录的 DOI、CSTR、URN 和 PID 等永久标识符，`show-backlinks: false` 只关闭文献表后的返回箭头。若永久标识符同时保存在 `url` 字段中，还需通过 `show-url` 决定该 URL 是否显示。
 
 == 正文引用
 

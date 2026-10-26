@@ -7,7 +7,11 @@
   style: "numeric",
   show-url: false,
   show-online: false,
+  show-identifiers: false,
   show-doi: false,
+  show-cstr: false,
+  show-urn: false,
+  show-pid: false,
   show-accessed: false,
   show-backlinks: false,
 )

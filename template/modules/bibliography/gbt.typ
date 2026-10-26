@@ -1,4 +1,4 @@
-// GB/T 7714-2025 bibliography formatter for normalized entry dictionaries.
+/* 面向规范化条目字典的 GB/T 7714-2025 参考文献格式化器。 */
 
 #let _as-string(value) = {
   if value == none {
@@ -77,7 +77,9 @@
 
 #let _initials(given) = {
   let result = ()
-  for word in given.replace(".", "").split(" ") {
+  /* 用句点分开紧连的姓名首字母，同时保留名字之间的连字符。 */
+  let words = given.replace(regex("\\.\\s*-\\s*"), "-").replace(".", " ").split(regex("\\s+"))
+  for word in words {
     if word == "" {
       continue
     }
@@ -439,10 +441,16 @@
 
 #let _url-contains(url, identifier) = url != "" and identifier != "" and lower(url).contains(lower(identifier))
 
-#let _identifier-parts(entry, show-url: true, show-doi: true) = {
-  if not show-doi {
-    return ()
-  }
+#let _identifier-parts(
+  entry,
+  show-url: true,
+  show-identifiers: true,
+  show-doi: true,
+  show-cstr: true,
+  show-urn: true,
+  show-pid: true,
+) = {
+  if not show-identifiers { return () }
   let result = ()
   let url = if show-url { _field(entry, ("url",)) } else { "" }
   let doi = _clean-doi(_field(entry, ("doi",)))
@@ -451,11 +459,11 @@
   }
 
   let cstr = _clean-id(_field(entry, ("cstr",)), "CSTR")
-  if cstr != "" and not _url-contains(url, cstr) {
+  if show-cstr and cstr != "" and not _url-contains(url, cstr) {
     result.push("CSTR：" + cstr)
   }
   let urn = _clean-id(_field(entry, ("urn",)), "URN")
-  if urn != "" and not _url-contains(url, urn) {
+  if show-urn and urn != "" and not _url-contains(url, urn) {
     result.push("URN：" + urn)
   }
 
@@ -480,14 +488,10 @@
     }
 
     let duplicate = (doi != "" and lower(clean) == lower(doi)) or (cstr != "" and lower(clean) == lower(cstr)) or (urn != "" and lower(clean) == lower(urn))
-    if clean != "" and not duplicate and not _url-contains(url, clean) {
-      if label == "DOI" {
-        if show-doi {
-          result.push("DOI：" + clean)
-        }
-      } else {
-        result.push(label + "：" + clean)
-      }
+    /* pid 字段按识别出的类型应用开关，其他类型由 show-pid 控制。 */
+    let visible = (DOI: show-doi, CSTR: show-cstr, URN: show-urn).at(label, default: show-pid)
+    if visible and clean != "" and not duplicate and not _url-contains(url, clean) {
+      result.push(label + "：" + clean)
     }
   }
   result
@@ -647,7 +651,11 @@
   style: "numeric",
   show-url: true,
   show-online: true,
+  show-identifiers: true,
   show-doi: true,
+  show-cstr: true,
+  show-urn: true,
+  show-pid: true,
   show-accessed: true,
   year-suffix: "",
 ) = {
@@ -815,7 +823,15 @@
   if show-url and url != "" {
     parts.push(url)
   }
-  for identifier in _identifier-parts(entry, show-url: show-url, show-doi: show-doi) {
+  for identifier in _identifier-parts(
+    entry,
+    show-url: show-url,
+    show-identifiers: show-identifiers,
+    show-doi: show-doi,
+    show-cstr: show-cstr,
+    show-urn: show-urn,
+    show-pid: show-pid,
+  ) {
     parts.push(identifier)
   }
   _dot-join(parts)
@@ -826,7 +842,11 @@
   style: "numeric",
   show-url: true,
   show-online: true,
+  show-identifiers: true,
   show-doi: true,
+  show-cstr: true,
+  show-urn: true,
+  show-pid: true,
   show-accessed: true,
   year-suffix: "",
 ) = text(render-entry-text(
@@ -834,7 +854,11 @@
   style: style,
   show-url: show-url,
   show-online: show-online,
+  show-identifiers: show-identifiers,
   show-doi: show-doi,
+  show-cstr: show-cstr,
+  show-urn: show-urn,
+  show-pid: show-pid,
   show-accessed: show-accessed,
   year-suffix: year-suffix,
 ))

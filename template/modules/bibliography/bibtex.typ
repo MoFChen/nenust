@@ -2,41 +2,86 @@
 
 #let _join(parts, separator: "") = parts.join(separator, default: "")
 
-#let _without-comments(source) = {
-  let lines = ()
-  for line in source.split("\n") {
-    if not line.contains("%") {
-      lines.push(line)
-      continue
-    }
-
-    let chars = line.clusters()
-    let result = ()
-    let pos = 0
-    while pos < chars.len() {
-      let char = chars.at(pos)
-      if char == "\\" and pos + 1 < chars.len() {
-        result.push(char)
-        result.push(chars.at(pos + 1))
-        pos += 2
-      } else if char == "%" {
-        break
-      } else {
-        result.push(char)
-        pos += 1
-      }
-    }
-    lines.push(_join(result))
-  }
-  _join(lines, separator: "\n")
-}
-
 #let _skip-space(chars, start) = {
   let pos = start
-  while pos < chars.len() and _is-space(chars.at(pos)) {
-    pos += 1
+  while pos < chars.len() {
+    if _is-space(chars.at(pos)) {
+      pos += 1
+    } else if chars.at(pos) == "%" {
+      /* 仅在标记之间跳过注释；花括号或引号内的百分号属于字段数据，包括 URL 百分号编码。 */
+      while pos < chars.len() and chars.at(pos) != "\n" { pos += 1 }
+    } else {
+      break
+    }
   }
   pos
+}
+
+/* 先按完整条目分块，避免每次字段解析都传递整个数据库的字符数组；
+   各解析器只接收单个条目，@string 宏仍保留全局作用域。 */
+#let _entry-chunks(source) = {
+  /* 使用原生正则扫描字段内容，Typst 循环只遍历结构分隔符，避免大数据库触发循环保护。 */
+  let headers = (:)
+  for item in source.matches(regex("@\\s*([^\\s{(%]+)(?:\\s|%[^\\n]*(?:\\n|$))*([{(])")) {
+    headers.insert(str(item.start), (kind: lower(item.captures.at(0)), open: item.captures.at(1), end: item.end))
+  }
+  let chunks = ()
+  let start = 0
+  let skip-until = 0
+  let kind = ""
+  let open = ""
+  let depth = 0
+  let braces = 0
+  let quoted = false
+  let comment = false
+  for token in source.matches(regex("\\\\[\\s\\S]|[@{}()\"%\\n]")) {
+    if token.start < skip-until { continue }
+    let char = token.text
+    if comment {
+      if char.contains("\n") { comment = false }
+      continue
+    }
+    if char.starts-with("\\") { continue }
+    if depth == 0 {
+      if char == "%" { comment = true; continue }
+      if char != "@" { continue }
+      let header = headers.at(str(token.start), default: none)
+      if header == none { panic("invalid BibTeX entry header") }
+      start = token.start
+      skip-until = header.end
+      kind = header.kind
+      open = header.open
+      depth = 1
+      braces = 0
+      quoted = false
+      continue
+    }
+    if quoted {
+      if char == "{" { braces += 1 }
+      else if char == "}" and braces > 0 { braces -= 1 }
+      else if char == "\"" and braces == 0 { quoted = false }
+      continue
+    }
+    let outer = if open == "{" { depth == 1 } else { braces == 0 }
+    if char == "%" and outer and kind != "comment" {
+      comment = true
+      continue
+    }
+    if char == "\"" and outer and kind != "comment" {
+      quoted = true
+    } else if open == "{" {
+      if char == "{" { depth += 1 }
+      else if char == "}" { depth -= 1 }
+    } else {
+      if char == "{" { braces += 1 }
+      else if char == "}" { braces -= 1 }
+      else if braces == 0 and char == "(" { depth += 1 }
+      else if braces == 0 and char == ")" { depth -= 1 }
+    }
+    if depth == 0 { chunks.push(source.slice(start, token.end)) }
+  }
+  if depth != 0 { panic("unclosed @" + kind + " entry") }
+  chunks
 }
 
 #let _strip-braces(source) = {
@@ -76,6 +121,11 @@
 }
 
 #let _decode-tex(source, preserve-tilde: false) = {
+  /* 普通 Unicode 字段无需 TeX 解码，跳过大量替换尝试和重复字符扫描。 */
+  if not source.contains("\\") {
+    let result = if source.contains("{") or source.contains("}") { _strip-braces(source) } else { source }
+    return if preserve-tilde { result } else { result.replace("~", " ") }
+  }
   let escaped-open = "\u{e000}"
   let escaped-close = "\u{e001}"
   let result = source.replace("\\{", escaped-open).replace("\\}", escaped-close)
@@ -216,7 +266,7 @@
   let pos = start
   while pos < chars.len() {
     let char = chars.at(pos)
-    if _is-space(char) or char in ("#", ",", close) {
+    if _is-space(char) or char in ("#", ",", close, "%") {
       break
     }
     pos += 1
@@ -270,72 +320,12 @@
   }
 }
 
-#let _skip-enclosed(chars, start, open, close, label) = {
-  let pos = start
-
-  if open == "{" {
-    let depth = 1
-    while pos < chars.len() {
-      let char = chars.at(pos)
-      if char == "\\" {
-        pos += 2
-      } else if char == "{" {
-        depth += 1
-        pos += 1
-      } else if char == "}" {
-        depth -= 1
-        pos += 1
-        if depth == 0 {
-          return pos
-        }
-      } else {
-        pos += 1
-      }
-    }
-  } else {
-    let depth = 1
-    let brace-depth = 0
-    let quoted = false
-    while pos < chars.len() {
-      let char = chars.at(pos)
-      if char == "\\" {
-        pos += 2
-      } else if char == "{" {
-        brace-depth += 1
-        pos += 1
-      } else if char == "}" {
-        if brace-depth == 0 {
-          panic("unmatched closing brace in " + label)
-        }
-        brace-depth -= 1
-        pos += 1
-      } else if char == "\"" and brace-depth == 0 {
-        quoted = not quoted
-        pos += 1
-      } else if not quoted and brace-depth == 0 and char == "(" {
-        depth += 1
-        pos += 1
-      } else if not quoted and brace-depth == 0 and char == ")" {
-        depth -= 1
-        pos += 1
-        if depth == 0 {
-          return pos
-        }
-      } else {
-        pos += 1
-      }
-    }
-  }
-
-  panic("unclosed " + label)
-}
-
 #let _parse-string(chars, start, close, macros) = {
   let pos = _skip-space(chars, start)
   let name-start = pos
   while pos < chars.len() {
     let char = chars.at(pos)
-    if _is-space(char) or char in ("=", ",", close) {
+    if _is-space(char) or char in ("=", ",", close, "%") {
       break
     }
     pos += 1
@@ -404,7 +394,7 @@
     let field-start = pos
     while pos < chars.len() {
       let char = chars.at(pos)
-      if _is-space(char) or char in ("=", ",", close) {
+      if _is-space(char) or char in ("=", ",", close, "%") {
         break
       }
       pos += 1
@@ -711,10 +701,17 @@
     let parent-key = fields.at("crossref")
     if parent-key in entries {
       let parent = _resolve-entry(parent-key, entries, stack + (key,))
+      /* 析出文献按容器角色继承主文献题名和作者，保留子条目自身的题名与作者。 */
+      let component = entry.entry-type in ("inbook", "incollection", "chapter", "inproceedings", "conference")
+      let container = parent.entry-type in ("book", "collection", "proceedings")
+      let mapping = if component and container {
+        (title: "booktitle", subtitle: "booksubtitle", titleaddon: "booktitleaddon", author: "bookauthor")
+      } else { (:) }
       for (field, value) in parent.fields {
-        if field != "crossref" and field not in fields {
-          fields.insert(field, value)
-          sources.insert(field, parent.sources.at(field))
+        let inherited = mapping.at(field, default: field)
+        if field != "crossref" and inherited not in fields {
+          fields.insert(inherited, value)
+          sources.insert(inherited, parent.sources.at(field))
         }
       }
     }
@@ -730,97 +727,64 @@
 
 #let _name-fields = ("author", "editor", "translator", "bookauthor")
 
+#let _entry-header(chars) = {
+  let pos = _skip-space(chars, 1)
+  let type-start = pos
+  while pos < chars.len() and not _is-space(chars.at(pos)) and chars.at(pos) not in ("{", "(", "%") {
+    pos += 1
+  }
+  let kind = lower(_join(chars.slice(type-start, pos)).trim())
+  if kind == "" { panic("missing BibTeX entry type") }
+  pos = _skip-space(chars, pos)
+  if pos >= chars.len() or chars.at(pos) not in ("{", "(") {
+    panic("expected '{' or '(' after @" + kind)
+  }
+  (kind: kind, start: pos + 1, close: if chars.at(pos) == "{" { "}" } else { ")" })
+}
+
 #let bibtex-keys(source) = {
-  let chars = _without-comments(source).clusters()
   let keys = ()
-  let pos = 0
-  while true {
-    pos = _skip-space(chars, pos)
-    while pos < chars.len() and chars.at(pos) != "@" { pos += 1 }
-    if pos >= chars.len() { break }
-
-    pos = _skip-space(chars, pos + 1)
-    let type-start = pos
-    while pos < chars.len() and not _is-space(chars.at(pos)) and chars.at(pos) not in ("{", "(") {
-      pos += 1
+  let seen = (:)
+  for chunk in _entry-chunks(source) {
+    let chars = chunk.clusters()
+    let header = _entry-header(chars)
+    if header.kind in ("comment", "preamble", "string", "xdata") { continue }
+    let start = _skip-space(chars, header.start)
+    let end = start
+    while end < chars.len() and chars.at(end) not in (",", header.close) { end += 1 }
+    let key = _join(chars.slice(start, end)).trim()
+    if key != "" and key not in seen {
+      keys.push(key)
+      seen.insert(key, true)
     }
-    let entry-type = lower(_join(chars.slice(type-start, pos)).trim())
-    pos = _skip-space(chars, pos)
-    if pos >= chars.len() or chars.at(pos) not in ("{", "(") {
-      panic("expected '{' or '(' after @" + entry-type)
-    }
-    let open = chars.at(pos)
-    let close = if open == "{" { "}" } else { ")" }
-    let body-start = pos + 1
-
-    if entry-type not in ("comment", "preamble", "string", "xdata") {
-      let key-start = _skip-space(chars, body-start)
-      let key-end = key-start
-      while key-end < chars.len() and chars.at(key-end) not in (",", close) { key-end += 1 }
-      let key = _join(chars.slice(key-start, key-end)).trim()
-      if key != "" and key not in keys { keys.push(key) }
-    }
-    pos = _skip-enclosed(chars, body-start, open, close, "@" + entry-type)
   }
   keys
 }
 
 #let parse-bibtex(source) = {
-  let chars = _without-comments(source).clusters()
   let macros = _months
   let entries = (:)
-  let pos = 0
-
-  while true {
-    pos = _skip-space(chars, pos)
-    if pos >= chars.len() {
-      break
-    }
-    if chars.at(pos) != "@" {
-      while pos < chars.len() and chars.at(pos) != "@" {
-        pos += 1
-      }
-      continue
-    }
-
-    pos = _skip-space(chars, pos + 1)
-    let type-start = pos
-    while pos < chars.len() and not _is-space(chars.at(pos)) and chars.at(pos) not in ("{", "(") {
-      pos += 1
-    }
-    let entry-type = lower(_join(chars.slice(type-start, pos)).trim())
-    if entry-type == "" {
-      panic("missing BibTeX entry type")
-    }
-
-    pos = _skip-space(chars, pos)
-    if pos >= chars.len() or chars.at(pos) not in ("{", "(") {
-      panic("expected '{' or '(' after @" + entry-type)
-    }
-    let open = chars.at(pos)
-    let close = if open == "{" { "}" } else { ")" }
-    pos += 1
-
-    if entry-type in ("comment", "preamble") {
-      pos = _skip-enclosed(chars, pos, open, close, "@" + entry-type)
-    } else if entry-type == "string" {
-      let parsed = _parse-string(chars, pos, close, macros)
-      pos = parsed.at(0)
+  for chunk in _entry-chunks(source) {
+    let chars = chunk.clusters()
+    let header = _entry-header(chars)
+    if header.kind in ("comment", "preamble") { continue }
+    if header.kind == "string" {
+      let parsed = _parse-string(chars, header.start, header.close, macros)
       macros.insert(parsed.at(1), parsed.at(2))
     } else {
-      let parsed = _parse-entry(chars, pos, close, entry-type, macros)
-      pos = parsed.at(0)
+      let parsed = _parse-entry(chars, header.start, header.close, header.kind, macros)
       let key = parsed.at(1)
-      if key in entries {
-        panic("duplicate BibTeX key: " + key)
-      }
+      if key in entries { panic("duplicate BibTeX key: " + key) }
       entries.insert(key, parsed.at(2))
     }
   }
 
   let result = (:)
   for key in entries.keys() {
-    let entry = _resolve-entry(key, entries, ())
+    let entry = entries.at(key)
+    if "crossref" in entry.fields {
+      entry = _resolve-entry(key, entries, ())
+    }
     let names = (author: (), editor: (), translator: (), bookauthor: ())
     for field in _name-fields {
       if field in entry.sources {
