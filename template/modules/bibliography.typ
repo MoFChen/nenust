@@ -10,6 +10,7 @@
 )
 
 #let _bib-data = state("nenu-bibliography-data", (:))
+#let _citation-data = state("nenu-bibliography-citation-data", (:))
 #let _bib-config = state("nenu-bibliography-config", (
   style: "numeric",
   show-url: true,
@@ -23,9 +24,6 @@
   show-backlinks: true,
 ))
 #let _csl-config = state("nenu-csl-config", none)
-#let _citation-model = state("nenu-bibliography-model", (
-  order: (:), keys: (), suffixes: (:), labels: (:), years: (:), full: false, ready: false,
-))
 
 #let _ref-label(key) = label("nenu-bibliography-ref-" + key)
 
@@ -34,8 +32,6 @@
     supplement: supplement,
     form: form,
   ))<nenu-bibliography-cite>]
-
-#let _collect-citations() = _citation-model.final()
 
 #let _full-requested() = query(<nenu-bibliography-request>).any(marker => marker.value.full)
 
@@ -48,7 +44,7 @@
   for key in data.keys() {
     if key not in selected { continue }
     let entry = data.at(key)
-    let group = author-identity(entry) + "|" + entry-year(entry)
+    let group = entry.identity + "|" + entry.year
     if group not in groups {
       groups.insert(group, ())
     }
@@ -97,8 +93,8 @@
     let bases = (:)
     for key in keys {
       let entry = data.at(key)
-      let base = author-label(entry)
-      let identity = author-identity(entry)
+      let base = entry.author
+      let identity = entry.identity
       bases.insert(key, base)
       if base in identities and identities.at(base) != identity {
         ambiguous.insert(base, true)
@@ -108,29 +104,37 @@
     }
     for key in keys {
       let entry = data.at(key)
-      labels.insert(key, if bases.at(key) in ambiguous { author-label(entry, detailed: true) } else { bases.at(key) })
-      years.insert(key, entry-year(entry, year-suffix: suffixes.at(key, default: "")))
+      labels.insert(key, if bases.at(key) in ambiguous { entry.detailed-author } else { bases.at(key) })
+      years.insert(key, entry.year + suffixes.at(key, default: ""))
     }
-    keys = keys.sorted(key: key => author-sort-key(data.at(key)) + "|" + suffixes.at(key, default: ""))
+    keys = keys.sorted(key: key => data.at(key).sort-key + "|" + suffixes.at(key, default: ""))
   }
   (order: order, keys: keys, suffixes: suffixes, labels: labels, years: years, full: full, ready: true)
 }
 
-/* 集中发布与标记位置无关的引用语义数据；回链位置仅在文献表渲染时收集，
-   避免正文位置变化导致每处引用重复计算作者消歧和编号。 */
-#let _publish-citation-model() = context {
-  if query(<nenu-bibliography-init>).len() > 1 {
-    panic("the built-in GB/T processor supports one bibliography initialization per document")
-  }
+/* 只把引用键传给纯函数，排除位置、页码和补充说明，使不同引用可复用语义计算。 */
+#let _citation-keys(markers) = markers.map(marker => marker.value.key)
+
+#let _citation-order(data, keys) = {
   let order = (:)
-  let data = _bib-data.get()
-  for marker in query(<nenu-bibliography-cite>) {
-    let item = marker.value
-    if item.key not in data { continue }
-    if item.key not in order { order.insert(item.key, order.len() + 1) }
+  for key in keys {
+    if key not in data { continue }
+    if key not in order { order.insert(key, order.len() + 1) }
   }
+  order
+}
+
+/* 直接从查询计算语义模型，不再在 context 中写状态并读取其 final()。
+   后者多引入一轮排版依赖，复杂目录与分页可能在五轮内来不及收敛。 */
+#let _collect-citations() = {
+  if query(<nenu-bibliography-init>).len() == 0 {
+    return (order: (:), keys: (), suffixes: (:), labels: (:), years: (:), full: false, ready: false)
+  }
+  let data = _citation-data.get()
   let config = _bib-config.get()
-  _citation-model.update(_build-citation-model(data, order, _full-requested(), config.style))
+  let keys = _citation-keys(query(<nenu-bibliography-cite>))
+  let order = _citation-order(data, keys)
+  _build-citation-model(data, order, _full-requested(), config.style)
 }
 
 #let _backlink-index() = {
@@ -190,7 +194,7 @@
   let config = _bib-config.get()
   let citations = _collect-citations()
   if full and not citations.full {
-    citations = _build-citation-model(data, citations.order, true, config.style)
+    citations = _build-citation-model(_citation-data.get(), citations.order, true, config.style)
   }
   let keys = citations.keys
   let suffixes = citations.suffixes
@@ -466,10 +470,29 @@
   "@misc{" + key + ",title={Reference}}\n"
 )).join("", default: "")
 
-/* 此上下文只捕获源数据，使持续编译时的正文编辑可以复用 BibTeX 解析和占位书目。 */
-#let _initialize-source(source) = context {
+/* 只发布引用语义所需的数据，题名等著录字段编辑不会牵动普通数字引用。
+   作者、年份、排序和语言的变化仍会更新著者-出版年制语义。 */
+#let _source-citation-data(data, style) = {
+  let result = (:)
+  for (key, entry) in data {
+    result.insert(key, if style == "numeric" { none } else {
+      (
+        author: author-label(entry),
+        detailed-author: author-label(entry, detailed: true),
+        identity: author-identity(entry),
+        year: entry-year(entry),
+        sort-key: author-sort-key(entry),
+      )
+    })
+  }
+  result
+}
+
+/* 此上下文只捕获源数据与引用制式，使正文编辑可复用初始化结果。 */
+#let _initialize-source(source, style) = context {
   let data = parse-bibtex(source)
   _bib-data.update(data)
+  _citation-data.update(_source-citation-data(data, style))
   let stub = _stub-bib(data)
   if stub != "" {
     show bibliography: none
@@ -495,7 +518,7 @@
     panic("style must be 'numeric' or 'author-date'")
   }
 
-  _initialize-source(source)
+  _initialize-source(source, style)
   _bib-config.update((
     style: style,
     show-url: show-url,
@@ -510,6 +533,12 @@
   ))
 
   [#metadata(none)<nenu-bibliography-init>]
+  /* 即使正文没有引用或文献表，也必须校验初始化次数。 */
+  context {
+    if query(<nenu-bibliography-init>).len() > 1 {
+      panic("the built-in GB/T processor supports one bibliography initialization per document")
+    }
+  }
 
   show cite: citation => {
     let key = str(citation.key)
@@ -518,7 +547,6 @@
   }
 
   body
-  _publish-citation-model()
 }
 
 #let init-csl(

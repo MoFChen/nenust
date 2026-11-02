@@ -20,6 +20,8 @@
 /* 先按完整条目分块，避免每次字段解析都传递整个数据库的字符数组；
    各解析器只接收单个条目，@string 宏仍保留全局作用域。 */
 #let _entry-chunks(source) = {
+  /* CRLF 在 clusters() 中构成单个簇；分块前统一换行，使字段空白与行注释按 LF 解析。 */
+  let source = source.replace("\r\n", "\n").replace("\r", "\n")
   /* 使用原生正则扫描字段内容，Typst 循环只遍历结构分隔符，避免大数据库触发循环保护。 */
   let headers = (:)
   for item in source.matches(regex("@\\s*([^\\s{(%]+)(?:\\s|%[^\\n]*(?:\\n|$))*([{(])")) {
