@@ -50,7 +50,7 @@ Typst 使用等号表示标题层级。模板仅为一级至四级标题提供�
 
 == 列表
 
-Typst 中的列表包含有序列表和无序列表，两者默认都不使用正文首行缩进。
+列表项的标记和正文分开排版。需要圆点上下对齐时，不要在普通段落开头手打 `·` 再用空格补位置。像“开始前必读”的条款那样用 `- ` 建立无序列表，再在该章节设置 `#set list(marker: [·], indent: 2em, body-indent: 0.5em)`。`indent` 确定列表相对左边界的位置，`body-indent` 确定标记和正文的间距；换行从条目正文起点续排，不受上一行标点挤压影响。
 
 *有序列表*：使用加号\+或数字和点号后跟空格和列表项。
 
@@ -172,9 +172,9 @@ Typst 中的列表包含有序列表和无序列表，两者默认都不使用�
     caption: [图题],
     rect(width: 3cm, height: 1.5cm, fill: luma(230)),
   ) <fig-workflow>
-  $ E = m c^2 $ <eq-objective>
+  $ E_0 = m c^2 $ <eq-rest-energy>
   == 小结
-  实验设计见 @sec-experiment，实验流程见 @fig-workflow，评价函数见 @eq-objective。
+  实验设计见 @sec-experiment，实验流程见 @fig-workflow，质量与静止能量的关系见 @eq-rest-energy。
   ```
 )
 

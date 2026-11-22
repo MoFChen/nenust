@@ -31,8 +31,8 @@
   ),
   abbreviations: abbreviations,
   keywords: (
-    zh: ("Typst", "学位论文", "论文模板"),
-    en: ("Typst", "graduate thesis", "thesis template")
+    zh: ("Typst", "学位论文", "nenust", "bibst", "GB/T 7714—2025"),
+    en: ("Typst", "graduate thesis", "nenust", "bibst", "GB/T 7714—2025")
   ),
   author: (name: (zh: "张三", en: "Zhang San"), student_id: "2077114514"),
   supervisors: (

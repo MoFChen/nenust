@@ -12,13 +12,13 @@ Typst 支持的插图格式包括：“png”、“jpg”、“gif”、“svg�
 
 请注意，在将 PDF 文件作为图像使用时存在一些限制：
 
-· 在导出为 PDF 时，所使用的 PDF 文件版本必须等于或低于目标 PDF 文件的版本。
+- 作为插图嵌入的源 PDF 版本不能高于输出文档的 PDF 版本。
 
-· 目前，不支持使用特定的 PDF 标准（如 PDF/A-3 或 PDF/UA-1）来导出 PDF 文件作为图像；在这种情况下，可以改用 SVG 格式来嵌入矢量图像。
+- 在本教程使用的 Typst 0.15.1 中，若输出文档指定 PDF/A 或 PDF/UA 等标准，不能嵌入 PDF 图片；矢量图可改用 SVG。这是对嵌入图片的限制，并非模板不能导出 PDF。
 
-· PDF 不能被设置为密码保护。
+- 作为图片使用的源 PDF 不能有密码保护。
 
-· PDF 图像中的标签信息不会被保留。
+- 源 PDF 的标签不会随图片保留。有语义的插图应另写替代描述。
 
 image 函数的更多参数和更多示例见 Typst 文档#footnote[#link("https://typst.app/docs/reference/visualize/image/")] <footnote-visualize-image>。
 
@@ -36,7 +36,7 @@ image 函数的更多参数和更多示例见 Typst 文档#footnote[#link("https
 
 == 多图排版
 
-在 figure 中内嵌 grid 即可实现多插图的排版。
+把多张图片放入同一个 `grid`，再用一个 `figure` 加图题，就能共用一个图号。对于以网格组织的组合图，像下例一样显式设置 `kind: image`，使编号与插图目录的筛选条件一致。
 
 #figure(
   caption: [多图纵向排版],

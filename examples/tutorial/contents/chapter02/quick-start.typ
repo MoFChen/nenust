@@ -2,6 +2,8 @@
 
 == 准备环境
 
+本章用 Windows、VS Code 和 Tinymist 演示本地写作。教程以 Typst 0.15.1 编译；已安装 Typst CLI 的读者可以直接从“创建论文目录”开始。编辑器和 PDF 阅读器都可以替换。
+
 === 首先安装 VS Code
 
 打开 #link("https://code.visualstudio.com/")[VSCode (https://code.visualstudio.com)] 官网。
@@ -132,9 +134,9 @@
 
 == 创建论文目录
 
-从模板开源地址 #link("https://github.com/MoFChen/nenust")[github.com/MoFChen/nenust] 下载模板，下载完成后解压到合适的位置。熟悉 Git 的用户也可运行 `git clone https://github.com/MoFChen/nenust`。与 Git 结合使用能更方便地管理论文版本，具体使用方法这里不再展开。
+要跟做本章，请从 #link("https://github.com/MoFChen/nenust")[nenust 仓库]下载完整源码（Code → Download ZIP），或运行 `git clone https://github.com/MoFChen/nenust`。解压或克隆后，应能在同一目录下看到 `template/` 和 `examples/`。Release 的带字体和不带字体压缩包仅含模板本体，不能从中复制 `examples/empty/`。
 
-使用 VSCode 打开模板文件夹。
+用 VS Code 打开上述仓库根目录，而不是单独打开 `template/` 或某个章节目录。
 
 `examples/empty` 是空白起点。复制 `empty` 文件夹并将副本改成合适的名字（这里演示改为 `my-thesis`）。副本中的 `main.typ`、`settings.typ` 和 `references.bib` 分别负责装配论文、保存配置与论文信息、保存参考文献，不需要重命名入口文件。
 
@@ -148,7 +150,7 @@
 typst compile --root . --font-path template/assets/fonts examples/my-thesis/main.typ
 ```
 
-首次冷缓存编译需要联网下载模板使用的 `@preview/cuti:0.4.0` 包；文献模块是仓库内的纯 Typst 实现，不需要下载社区文献包。
+首次编译时，若本机尚未缓存 `@preview/cuti:0.4.0`，Typst 会联网下载它以处理中文伪粗体。文献模块 bibst 已随 `template/` 提供；编译单篇论文不需要 Python、BibTeX 或 Biber 可执行程序。
 
 使用 SumatraPDF 查看编译完成的 main.pdf 文件。空白项目仍会生成外封面、中英文信息页、委员会页、声明页、摘要、目录、正文标题和博士评语页；能够看到这些页面且终端没有编译错误，说明基础环境可用。
 
@@ -166,7 +168,7 @@ typst compile --root . --font-path template/assets/fonts examples/my-thesis/main
 
 === 自动编译
 
-每次修改都要伴随执行编译命令实在是繁琐，Typst 提供了 watch 命令实时监控文件变化并自动进行增量编译，增量编译速度极快几乎等同于实时预览。
+`typst watch` 保持同一个编译进程，保存章节或文献库后会重新生成 PDF。bibst 将文献数据解析与正文引用顺序分开处理；只改正文时可复用已有结果，移动首次引用或修改文献字段时则会更新相应输出。逐次重新运行 `typst compile` 不会保留这份进程内缓存。
 
 ```powershell
 typst watch --root . --font-path template/assets/fonts examples/my-thesis/main.typ

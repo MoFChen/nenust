@@ -93,7 +93,7 @@ assets/fonts/
 
 **[nenust-template-with-fonts.zip](https://github.com/MoFChen/nenust/releases/download/latest/nenust-template-with-fonts.zip)**
 
-如果还希望参考完整示例，推荐同时查看：
+Release 压缩包的顶层目录名为 `nenust-template/`，只包含模板。若要沿用下文的仓库编译命令，请在工程根目录把它命名为 `template/`，并另行放入相应示例及其文件；直接克隆完整仓库则已经具备该结构。
 
 * [`examples/empty/`](examples/empty/)
 * [`examples/tutorial/`](examples/tutorial/)
@@ -165,7 +165,7 @@ thesis/
 
 模板支持匿名评审模式。
 
-启用 `anonymous: true` 后，模板会根据匿名论文要求隐藏或调整相关个人信息。
+启用 `anonymous: true` 后，模板会隐藏封面、委员会页等固定栏位里的身份信息，并清空 PDF 作者元数据。摘要、正文、图片、成果、评语、自引和文件名仍需作者检查。
 
 正常提交版本使用 `anonymous: false`。
 
@@ -239,11 +239,30 @@ typst watch \
 
 修改 `.typ` 文件后并保存，Typst 会自动重新编译 PDF。
 
+### 本地复现 Pages 预览
+
+只检查一个版本时，可在仓库根目录直接指定预览名。例如：
+
+```sh
+typst compile --root . --font-path template/assets/fonts --input preview=author-date-full examples/tutorial/main.typ author-date-full.pdf
+```
+
+要构建整个预览站，在有 Typst 和 Python 3 的环境中运行：
+
+```sh
+python scripts/build_pages.py
+python -m http.server 8000 --bind 127.0.0.1 --directory _site
+```
+
+打开 <http://127.0.0.1:8000/> 即可对比 PDF。新增版本只需在 [`examples/tutorial/previews.json`](examples/tutorial/previews.json) 中添加一项：键决定 PDF 文件名，`label` 是页面显示名称，`config`、`style` 和 `full` 按需覆盖教程默认值。未指定 `--input preview=...` 时仍按教程原配置编译。
+
+发往 `master` 的 PR 会编译最小示例和完整预览站；仅改 Markdown 或 `LICENSE` 时跳过。推送到 `master` 或手动运行工作流时，构建通过后才会部署 Pages。
+
 ---
 
 ## 📚 参考文献
 
-模板提供针对 **GB/T 7714-2025** 的参考文献支持。
+nenust 内置 [bibst](https://github.com/MoFChen/bibst) 文献引擎，支持 **GB/T 7714-2025** 的顺序编码制 `numeric` 和著者-出版年制 `author-date`。它直接读取 BibTeX 文本，不需要安装 BibTeX 或 Biber。
 
 参考文献数据通过 `references.bib` 管理。
 
@@ -261,7 +280,9 @@ typst watch \
 }
 ```
 
-支持两种主要引用样式 `numeric` 以及 `author-date`。
+在 `main.typ` 中先应用 `init-bibliography.with(read("references.bib"), ...)`，再应用论文模板。`nenu-bibliography-render()` 默认只列已引用或由 `nocite` 纳入的条目；仓库两个示例均显式使用 `full: true` 展示整库。
+
+要使用普通 CSL 样式，改用 `init-csl.with(read("references.bib"), read("style.csl"))` 和 `render-bibliography()`，由样式控制输出。脚注、合并引用、标识符开关及 CSL 兼容范围见[教程的文献章节](examples/tutorial/contents/chapter09/bibliography.typ)。
 
 项目中同时提供了 GB/T 7714-2025 相关规则整理：
 

@@ -66,7 +66,7 @@
 
 *模板现状*：模板没有为间隔号添加专门的断行规则。问题主要出现在较窄的表格单元格、图题、标题或长音译姓名中。
 
-*实际处理*：优先改写列宽或句子，让换行避开间隔号。短姓名可整体放入 `box` 以禁止内部断行，但这会增加上一行留白，不适合长串文本。
+*实际处理*：姓名中的间隔号属于正文；可调整列宽，短姓名也可整体放入 `box`，代价是上一行可能留白。条款前的圆点则是列表标记，不必参与正文断行。“开始前必读”使用 `list` 的独立标记列，换行后的条文仍与条文首字对齐；无需全局关闭标点挤压或两端对齐。
 
 参见 #link("https://typst-doc-cn.github.io/clreq/#interpunct-line-start")[clreq-gap：间隔号不能位于行首]、#link("https://github.com/typst/typst/issues/6774")[Typst issue 6774]和 #link("https://www.w3.org/TR/clreq/#prohibition_rules_for_line_start_end")[W3C CLReq：行首行尾禁则]。
 

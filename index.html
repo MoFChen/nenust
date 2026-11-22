@@ -456,26 +456,13 @@
     </main>
   </div>
 
+  <script src="./pdf-versions.js"></script>
   <script type="module">
-    // ===== PDF 文件配置：file 是实际文件名，label 是界面显示的中文别名 =====
-    const PDF_VERSIONS = [
-      { file: "anonymous-double.pdf", label: "匿名稿 · 双面排版" },
-      { file: "author-date-full.pdf", label: "著者-出版年制 · 完整参考文献示例" },
-      { file: "doctoral-academic-social.pdf", label: "学术型博士 · 社科" },
-      { file: "doctoral-professional-science.pdf", label: "专业型博士 · 理工科" },
-      { file: "master-academic-science.pdf", label: "学术型硕士 · 理工科" },
-      { file: "master-academic-social.pdf", label: "学术型硕士 · 社科" },
-      { file: "master-professional-social.pdf", label: "专业型硕士 · 社科" },
-      { file: "numeric-full.pdf", label: "顺序编码制 · 完整参考文献示例" },
-      { file: "tutorial.pdf", label: "模板使用教程" }
-    ];
-
+    const PDF_VERSIONS = window.NENU_PDF_VERSIONS || [];
     const PDF_FILES = PDF_VERSIONS.map((item) => item.file);
     const PDF_LABELS = new Map(PDF_VERSIONS.map((item) => [item.file, item.label]));
-    // ======================================================================
 
-    // 为了实现可靠的双栏同步滚动，预览改由 PDF.js 渲染。
-    // 如需完全离线，可把下面两个地址改成本地 pdf.min.mjs / pdf.worker.min.mjs。
+    /* 双栏同步滚动使用 PDF.js；离线预览时，库和 worker 都要改用本地文件。 */
     const PDFJS_URL = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.min.mjs";
     const PDFJS_WORKER_URL = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.worker.min.mjs";
 
@@ -569,7 +556,7 @@
       if (!PDF_FILES.length) {
         const empty = document.createElement("div");
         empty.className = "empty";
-        empty.textContent = "请先在 PDF_VERSIONS 中添加 PDF 文件。";
+        empty.textContent = "未加载预览清单。请运行 python scripts/build_pages.py 后打开 _site/ 中的预览页。";
         el.fileList.appendChild(empty);
         return;
       }

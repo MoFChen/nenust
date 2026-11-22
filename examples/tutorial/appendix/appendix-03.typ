@@ -1,4 +1,4 @@
-本附录区分两类修改：`information`、`config` 和正文中的局部规则属于论文入口可控制的公开层；`template/` 下的常量与规则属于模板内部实现。下列标为“内部片段”的代码只用于展示应修改的源文件位置，不应粘贴到论文正文或 `information` 中执行。修改公开数据后至少运行完整检查；修改模板内部实现后同时运行最小与完整检查：
+本附录区分两类修改：`information`、`config` 和正文中的局部规则属于论文入口可控制的公开层；`template/` 下的常量与规则属于模板内部实现。“内部片段”用于定位源码，不应粘贴到论文正文或 `information` 中执行。修改自己的论文后，应编译*自己的* `main.typ`；修改仓库模板时，再从仓库根目录编译下列两个示例，分别检查最小用例和完整教程：
 
 #figure(
   caption: [Typst 编译命令],
@@ -32,7 +32,7 @@
   caption: [模板内部渲染标题的代码片段],
   kind: image,
   ```typst
-  place(center + top, dy: 268pt, text(font: FONT_YAHEI, size: 16pt, title))
+  place-top(268pt)[#text(font: FONT_YAHEI, size: 16pt, title)]
   ```
 )
 
@@ -85,6 +85,7 @@ A3 外封面只在 `config.include_outer_cover` 为 `true` 时生成。`template
       rows: 19pt,
       inset: 2pt,
       align: (right + bottom, center + bottom),
+      stroke: (none, (bottom: 0.5pt + black)),
       ..information,
     )
   ]
@@ -211,8 +212,8 @@ A3 外封面只在 `config.include_outer_cover` 为 `true` 时生成。`template
   include_abbreviations: true,
 
   abbreviations: (
-    (abbr: "LLM", description: "大语言模型（Large Language Model）"),
-    (abbr: $sigma$, description: "标准差"),
+    (abbr: "CLI", description: "命令行接口（command-line interface）"),
+    (abbr: $D_t$, description: "流体方程中的物质导数"),
   ),
   ```
 )
@@ -294,8 +295,8 @@ A3 外封面只在 `config.include_outer_cover` 为 `true` 时生成。`template
   caption: [公式标签与引用示例],
   kind: image,
   ```typst
-  $ E = m c^2 $ <eq-mass-energy>
-  由 @eq-mass-energy 可知上述关系成立。
+  $ E_0 = m c^2 $ <eq-mass-energy>
+  @eq-mass-energy 给出了质量为 $m$ 的物体的静止能量，其中 $c$ 为真空光速。
   ```
 )
 
@@ -355,9 +356,9 @@ A3 外封面只在 `config.include_outer_cover` 为 `true` 时生成。`template
 
 例如，一级标题若需阿拉伯数字可将正文分支改为 `numbering("第1章", nums.first())`；低层级若需“第...节”，则应在同一分支统一加入前缀和后缀。只改引用函数不会改变标题本身和目录中的编号；若两处都要改变，还需同步评估正文与附录 numberer。当前社科标题显示“一、”“（一）”等格式，但二级及以下引用仍使用阿拉伯数字路径，这是模板现有边界。修改后应搜索正文中已经手写的“第”“章”“节”，避免产生重复词，并运行两项编译检查，分别核对理工科和社科的一至四级标题引用、附录引用以及至少一个非标题引用。
 
-== 参考文献编号布局
+== 参考文献编号布局 <sec-bib-layout>
 
-顺序编码制的参考文献列表使用普通段落而不是表格：`nenu-bibliography-render` 先按当前字体测量全部 `[n]`，取最大宽度作为编号框宽度，再把“编号框宽度 + 编号正文间距”设为悬挂缩进。因此 `[1]`、`[10]`、`[100]` 的文献正文起点一致，多行条目的续行也与正文对齐，并允许单条长文献跨页。编号框不会重复出现在续页。
+在内置 GB/T 模式中，bibst 提供条目、序号、链接目标和回链，nenust 的 `nenu-bibliography-render` 决定如何排版这些条目。顺序编码制使用普通段落：先测量全部 `[n]`，再把“最宽编号框 + 间距”设为悬挂缩进。因此 `[1]`、`[10]`、`[100]` 的正文和续行起点一致，长条目可跨页。若编写自己的 `render-bibliography(renderer: ...)`，输出 `entry.labeled-rendered` 可同时保留正文跳转的目标和已开启的回链；只输出 `entry.rendered-text` 会丢掉这些链接。
 
 编号对齐与编号正文间距没有公开 `config` 或 `information` 字段；需要全局调整时，可编辑 `template/config/styles.typ` 的内部样式：
 
@@ -375,3 +376,5 @@ A3 外封面只在 `config.include_outer_cover` 为 `true` 时生成。`template
 `align` 控制短编号在最大宽度编号框中的水平位置，可设为不带引号的 `left`、`center` 或 `right`；它不改变文献正文的对齐方式。`gap` 控制编号框与文献正文的水平距离，并同时计入续行的悬挂缩进，应使用非负长度，如 `0pt`、`0.5em` 或 `6pt`。它不是条目之间的纵向间距；条目行距和段间距仍由 `nenu-template.typ` 中的 `leading: 0.25em` 与 `spacing: 0.5em` 控制。
 
 这两个值只作用于 `style: "numeric"` 的内置参考文献渲染；`style: "author-date"` 继续使用普通段落，原生 CSL 也不经过该 renderer。编号框宽度会随条目数量、字体和字号自动重新测量，没有需要同步修改的固定宽度。调整后应至少检查一至三位编号、中外文多行条目、单条文献跨页、空列表、著者-出版年制，以及开启 `show-backlinks` 后的编号对齐和 PDF 往返链接，并运行最小与完整编译检查。
+
+若只需读取条目信息，可在 `context` 内调用 `get-cited-entries()`。例如 `entry.key` 是引用键，`entry.year-suffix` 是同年消歧后缀，`entry.backlinks` 是回链位置数组。若只是印一份论文，请继续使用现成的文献表函数，不必自行拼接这些字段。

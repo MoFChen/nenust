@@ -226,7 +226,7 @@ Typst 默认处于标记模式，`#` 从标记模式进入一个代码表达式�
   ```)
 )
 
-自定义函数是纯函数：相同参数会得到相同结果。少数修改接收值的内置方法是例外。函数只在一个章节使用时放在该章节顶部，被多个章节复用时再移入独立模块。
+上例的 `total` 只依赖传入的数值；而读取文件的函数还依赖文件内容，返回 `context` 的函数则可能随放置位置得到不同的排版结果。函数只在一个章节使用时可放在该章节顶部，被多个章节复用时再移入独立模块。
 
 官方参考：#link("https://typst.app/docs/reference/foundations/function/")[Function]、#link("https://typst.app/docs/reference/foundations/arguments/")[Arguments]。
 
