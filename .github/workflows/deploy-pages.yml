@@ -23,11 +23,19 @@ jobs:
       - uses: actions/checkout@v6
       - uses: typst-community/setup-typst@v5
 
-      - name: 检查最小示例
-        run: typst compile --root . --font-path template/assets/fonts examples/empty/main.typ "$RUNNER_TEMP/empty.pdf"
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: scripts/requirements-pages.txt
+
+      - name: 安装页面渲染依赖
+        run: python -m pip install -r scripts/requirements-pages.txt
 
       - name: 构建预览站
-        run: python3 scripts/build_pages.py
+        run: |
+          python -m unittest discover -s scripts -p test_page_diff.py
+          python scripts/build_pages.py
 
       - uses: actions/upload-pages-artifact@v4
         if: github.event_name != 'pull_request'

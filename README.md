@@ -55,6 +55,10 @@ assets/fonts/
 
 ### 👉 https://mofchen.github.io/nenust/
 
+在「论文版式对照台」点击 **实名 / 匿名** 就能看到封面身份栏的变化，点击 **两种引文制** 可直接对齐参考文献。也可以任选两份 PDF：左侧索引列出两边各自的物理页码，点击即跳转，并可标出变化区域。双面排版新增的空白页会单独列出。手机上可在同一处差异切换 A、B 版；「复制此页链接」可分享具体页。
+
+目录收录完整教程、空白论文，以及博士/硕士 × 学术/专业 × 理工/社科的 8 种组合；还可单独查看匿名、双面、外封、目录、缩略语、附录图表及全库/仅已引两种文献表范围。
+
 ---
 
 ## ✨ 主要特性
@@ -247,14 +251,17 @@ typst watch \
 typst compile --root . --font-path template/assets/fonts --input preview=author-date-full examples/tutorial/main.typ author-date-full.pdf
 ```
 
-要构建整个预览站，在有 Typst 和 Python 3 的环境中运行：
+要构建整个预览站，在有 Typst 和 Python 3.10+ 的环境中运行：
 
 ```sh
+python -m pip install -r scripts/requirements-pages.txt
 python scripts/build_pages.py
 python -m http.server 8000 --bind 127.0.0.1 --directory _site
 ```
 
-打开 <http://127.0.0.1:8000/> 即可对比 PDF。新增版本只需在 [`examples/tutorial/previews.json`](examples/tutorial/previews.json) 中添加一项：键决定 PDF 文件名，`label` 是页面显示名称，`config`、`style` 和 `full` 按需覆盖教程默认值。未指定 `--input preview=...` 时仍按教程原配置编译。
+打开 <http://127.0.0.1:8000/> 即可对比 PDF。新增版本只需在 [`examples/tutorial/previews.json`](examples/tutorial/previews.json) 中添加一项：键决定 PDF 文件名，`group`、`label` 是类别和名称，`config`、`style` 和 `full` 按需覆盖教程默认值。`empty` 直接编译空白示例；未指定 `--input preview=...` 时仍按教程原配置编译。
+
+每次构建都从成品 PDF 的章节书签和正文计算页码对应关系，再按整页渲染图像判断差异。上下页边发生改变而正文区域像素相同时，单列为「仅页边」。对照是视觉级的：网页提供按页加载的预览图，文字检索、复制和文内链接请用「打开原 PDF」。
 
 发往 `master` 的 PR 会编译最小示例和完整预览站；仅改 Markdown 或 `LICENSE` 时跳过。推送到 `master` 或手动运行工作流时，构建通过后才会部署 Pages。
 

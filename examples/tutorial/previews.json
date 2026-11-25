@@ -1,35 +1,25 @@
 {
-  "anonymous-double": {
-    "label": "匿名稿 · 双面排版",
-    "config": { "anonymous": true, "double_sided": true }
-  },
-  "author-date-full": {
-    "label": "著者-出版年制 · 完整参考文献示例",
-    "style": "author-date", "full": true
-  },
-  "doctoral-academic-social": {
-    "label": "学术型博士 · 社科",
-    "config": { "degree_level": "doctoral", "degree_type": "academic", "discipline_group": "social" }
-  },
-  "doctoral-professional-science": {
-    "label": "专业型博士 · 理工科",
-    "config": { "degree_level": "doctoral", "degree_type": "professional", "discipline_group": "science" }
-  },
-  "master-academic-science": {
-    "label": "学术型硕士 · 理工科",
-    "config": { "degree_level": "master", "degree_type": "academic", "discipline_group": "science" }
-  },
-  "master-academic-social": {
-    "label": "学术型硕士 · 社科",
-    "config": { "degree_level": "master", "degree_type": "academic", "discipline_group": "social" }
-  },
-  "master-professional-social": {
-    "label": "专业型硕士 · 社科",
-    "config": { "degree_level": "master", "degree_type": "professional", "discipline_group": "social" }
-  },
-  "numeric-full": {
-    "label": "顺序编码制 · 完整参考文献示例",
-    "style": "numeric", "full": true
-  },
-  "tutorial": { "label": "模板使用教程" }
+  "tutorial": {"group": "基础示例", "label": "模板使用教程"},
+  "empty": {"group": "基础示例", "label": "空白论文骨架", "entry": "empty"},
+  "doctoral-academic-science": {"group": "学位与学科", "label": "学术型博士 · 理工科", "config": {"degree_level": "doctoral", "degree_type": "academic", "discipline_group": "science"}},
+  "doctoral-academic-social": {"group": "学位与学科", "label": "学术型博士 · 社科", "config": {"degree_level": "doctoral", "degree_type": "academic", "discipline_group": "social"}},
+  "doctoral-professional-science": {"group": "学位与学科", "label": "专业型博士 · 理工科", "config": {"degree_level": "doctoral", "degree_type": "professional", "discipline_group": "science"}},
+  "doctoral-professional-social": {"group": "学位与学科", "label": "专业型博士 · 社科", "config": {"degree_level": "doctoral", "degree_type": "professional", "discipline_group": "social"}},
+  "master-academic-science": {"group": "学位与学科", "label": "学术型硕士 · 理工科", "config": {"degree_level": "master", "degree_type": "academic", "discipline_group": "science"}},
+  "master-academic-social": {"group": "学位与学科", "label": "学术型硕士 · 社科", "config": {"degree_level": "master", "degree_type": "academic", "discipline_group": "social"}},
+  "master-professional-science": {"group": "学位与学科", "label": "专业型硕士 · 理工科", "config": {"degree_level": "master", "degree_type": "professional", "discipline_group": "science"}},
+  "master-professional-social": {"group": "学位与学科", "label": "专业型硕士 · 社科", "config": {"degree_level": "master", "degree_type": "professional", "discipline_group": "social"}},
+  "anonymous": {"group": "送审与装订", "label": "匿名评审稿", "config": {"anonymous": true}},
+  "double-sided": {"group": "送审与装订", "label": "双面排版", "config": {"double_sided": true}},
+  "anonymous-double": {"group": "送审与装订", "label": "匿名稿 · 双面排版", "config": {"anonymous": true, "double_sided": true}},
+  "no-outer-cover": {"group": "送审与装订", "label": "不含 A3 外封", "config": {"include_outer_cover": false}},
+  "no-figure-list": {"group": "目录与附录", "label": "不列插图目录", "config": {"include_list_of_figures": false}},
+  "no-table-list": {"group": "目录与附录", "label": "不列附表目录", "config": {"include_list_of_tables": false}},
+  "no-abbreviations": {"group": "目录与附录", "label": "不列缩略语说明", "config": {"include_abbreviations": false}},
+  "appendix-figures": {"group": "目录与附录", "label": "插图目录含附录", "config": {"include_appendix_figures": true}},
+  "appendix-tables": {"group": "目录与附录", "label": "附表目录含附录", "config": {"include_appendix_tables": true}},
+  "numeric-full": {"group": "参考文献", "label": "顺序编码制 · 全库", "style": "numeric", "full": true},
+  "author-date-full": {"group": "参考文献", "label": "著者–出版年制 · 全库", "style": "author-date", "full": true},
+  "numeric-cited": {"group": "参考文献", "label": "顺序编码制 · 仅已引", "style": "numeric", "full": false},
+  "author-date-cited": {"group": "参考文献", "label": "著者–出版年制 · 仅已引", "style": "author-date", "full": false}
 }

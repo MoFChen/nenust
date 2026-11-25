@@ -11,3 +11,14 @@
 - 图题之间不定的间距，模板没有做出定义（无伤大雅，可以自己调整）
 - 三线表水平偏移（无伤大雅，可以自己调整）
 - 页码错乱（无伤大雅，可以自己调整）
+
+定稿时可按@tab-appendix-check 对照学校的现行样张。启用 `include_appendix_tables` 后，这张附录表也会出现在前置的附表目录中。
+
+#figure(
+  table(columns: (auto, 1fr), align: left,
+    table.header([核对位置], [检查内容]),
+    [中英文封面], [题名、作者栏及提交日期],
+    [目录与章首页], [章名、页码与双面起页位置],
+  ),
+  caption: [提交前的版式核对项],
+) <tab-appendix-check>
