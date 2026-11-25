@@ -181,87 +181,35 @@
   _strip-braces(result).replace(escaped-open, "{").replace(escaped-close, "}")
 }
 
-#let _value(text, braced: none) = (
-  text: text,
-  braced: if braced == none { text } else { braced },
-)
-
-#let _parse-braced(chars, start) = {
-  let text = ()
-  let braced = ()
-  let depth = 1
-  let pos = start + 1
-
-  while pos < chars.len() {
-    let char = chars.at(pos)
-    if char == "\\" {
-      text.push(char)
-      braced.push(char)
-      pos += 1
-      if pos < chars.len() {
-        text.push(chars.at(pos))
-        braced.push(chars.at(pos))
-        pos += 1
-      }
-    } else if char == "{" {
-      depth += 1
-      braced.push(char)
-      pos += 1
-    } else if char == "}" {
-      depth -= 1
-      if depth == 0 {
-        return (pos + 1, _value(_join(text), braced: _join(braced)))
-      }
-      braced.push(char)
-      pos += 1
-    } else {
-      text.push(char)
-      braced.push(char)
-      pos += 1
-    }
-  }
-
-  panic("unclosed braced BibTeX value")
-}
-
-#let _parse-quoted(chars, start) = {
-  let text = ()
-  let braced = ()
+/* 只定位结束符，再取一次原始字段；内部花括号与转义须留给姓名解析和 TeX 解码。 */
+#let _parse-delimited(chars, start) = {
+  let quoted = chars.at(start) == "\""
   let depth = 0
   let pos = start + 1
 
   while pos < chars.len() {
     let char = chars.at(pos)
     if char == "\\" {
-      text.push(char)
-      braced.push(char)
-      pos += 1
-      if pos < chars.len() {
-        text.push(chars.at(pos))
-        braced.push(chars.at(pos))
-        pos += 1
-      }
+      pos += 2
+      continue
     } else if char == "{" {
       depth += 1
-      braced.push(char)
-      pos += 1
     } else if char == "}" {
       if depth == 0 {
-        panic("unmatched closing brace in quoted BibTeX value")
+        if quoted { panic("unmatched closing brace in quoted BibTeX value") }
+        break
       }
       depth -= 1
-      braced.push(char)
-      pos += 1
-    } else if char == "\"" and depth == 0 {
-      return (pos + 1, _value(_join(text), braced: _join(braced)))
-    } else {
-      text.push(char)
-      braced.push(char)
-      pos += 1
+    } else if quoted and char == "\"" and depth == 0 {
+      break
     }
+    pos += 1
   }
 
-  panic("unclosed quoted BibTeX value")
+  if pos >= chars.len() {
+    panic(if quoted { "unclosed quoted BibTeX value" } else { "unclosed braced BibTeX value" })
+  }
+  (pos + 1, _join(chars.slice(start + 1, pos)))
 }
 
 #let _parse-bare(chars, start, close, macros) = {
@@ -279,13 +227,11 @@
   }
 
   let token = _join(chars.slice(start, pos))
-  let name = lower(token)
-  (pos, if name in macros { macros.at(name) } else { _value(token) })
+  (pos, macros.at(lower(token), default: token))
 }
 
 #let _parse-value(chars, start, close, macros) = {
-  let text = ""
-  let braced = ""
+  let value = ""
   let pos = start
 
   while true {
@@ -299,17 +245,13 @@
       panic("expected a BibTeX value component")
     }
 
-    let parsed = if char == "{" {
-      _parse-braced(chars, pos)
-    } else if char == "\"" {
-      _parse-quoted(chars, pos)
+    let (end, part) = if char in ("{", "\"") {
+      _parse-delimited(chars, pos)
     } else {
       _parse-bare(chars, pos, close, macros)
     }
-    pos = parsed.at(0)
-    text += parsed.at(1).text
-    braced += parsed.at(1).braced
-    pos = _skip-space(chars, pos)
+    value += part
+    pos = _skip-space(chars, end)
 
     if pos >= chars.len() {
       panic("unclosed BibTeX entry after a value")
@@ -317,7 +259,7 @@
     if chars.at(pos) == "#" {
       pos += 1
     } else {
-      return (pos, _value(text, braced: braced))
+      return (pos, value)
     }
   }
 }
@@ -411,13 +353,13 @@
       panic("expected '=' after field " + field + " in entry " + key)
     }
 
-    let parsed = _parse-value(chars, pos + 1, close, macros)
-    pos = _skip-space(chars, parsed.at(0))
+    let (end, value) = _parse-value(chars, pos + 1, close, macros)
+    pos = _skip-space(chars, end)
     fields.insert(field, _decode-tex(
-      parsed.at(1).braced,
+      value,
       preserve-tilde: field in ("url", "doi", "pid", "cstr", "urn"),
     ))
-    sources.insert(field, parsed.at(1).braced)
+    sources.insert(field, value)
 
     if pos >= chars.len() {
       panic("unclosed @" + entry-type + " entry " + key)
@@ -435,21 +377,9 @@
   }
 }
 
-#let _month(text) = _value(text)
-
 #let _months = (
-  jan: _month("January"),
-  feb: _month("February"),
-  mar: _month("March"),
-  apr: _month("April"),
-  may: _month("May"),
-  jun: _month("June"),
-  jul: _month("July"),
-  aug: _month("August"),
-  sep: _month("September"),
-  oct: _month("October"),
-  nov: _month("November"),
-  dec: _month("December"),
+  jan: "January", feb: "February", mar: "March", apr: "April", may: "May", jun: "June",
+  jul: "July", aug: "August", sep: "September", oct: "October", nov: "November", dec: "December",
 )
 
 #let _split-words(source) = {

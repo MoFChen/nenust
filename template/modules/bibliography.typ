@@ -69,16 +69,22 @@
   keys
 }
 
-#let _resolved-author-label(data, key, keys) = {
-  let entry = data.at(key)
-  let base = author-label(entry)
-  let identity = author-identity(entry)
-  let ambiguous = keys.any(other => (
-    other != key
-      and author-label(data.at(other)) == base
-      and author-identity(data.at(other)) != identity
-  ))
-  author-label(entry, detailed: ambiguous)
+/* 顺序编码制仅在输出作者名时建立索引；不同引用键共用同一组选中文献的结果。 */
+#let _ambiguous-author-labels(data, keys) = {
+  let identities = (:)
+  let ambiguous = (:)
+  for key in keys {
+    let entry = data.at(key)
+    let base = author-label(entry)
+    if base in ambiguous { continue }
+    let identity = author-identity(entry)
+    if base not in identities {
+      identities.insert(base, identity)
+    } else if identities.at(base) != identity {
+      ambiguous.insert(base, true)
+    }
+  }
+  ambiguous
 }
 
 #let _build-citation-model(data, order, full, style) = {
@@ -266,9 +272,13 @@
     return link(target, citation)
   }
   if form == "author" {
-    return link(target, if config.style == "author-date" {
+    let name = if config.style == "author-date" {
       citations.labels.at(key)
-    } else { _resolved-author-label(data, key, citations.keys) })
+    } else {
+      let base = author-label(entry)
+      if base in _ambiguous-author-labels(data, citations.keys) { author-label(entry, detailed: true) } else { base }
+    }
+    return link(target, name)
   }
   if form == "year" {
     return link(target, entry-year(entry, year-suffix: suffix))

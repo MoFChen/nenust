@@ -96,8 +96,6 @@
   /* 设置智能引号 */
   set smartquote(enabled: true)
   show smartquote: set text(font: FONT_TIMES)
-  /* 设置伪粗体 */
-  show: show-cn-fakebold
   /* 设置目录样式 */
   set outline(indent: 1em)
   show outline.entry: set block(above: 0.935em)
